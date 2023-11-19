@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
             } 
         }
     }
-    // Print the results (everything tested and working as expected) PRINTS AND COMMENT TO BE DELETED
+    // Print the results (everything tested and working as expected) PRINTS SHALL BE DELETED
     printf("asip: %s\n", asip);
     printf("port: %s\n", port);
 
@@ -52,23 +52,36 @@ int main(int argc, char **argv) {
 
     while(true) {
         fgets(buffer, sizeof(buffer), stdin);
-
-        if (!is_command_valid(buffer)) {
+        
+        char words_command[10][20] = {0};  
+        int j = 0, k = 0;
+        // extract words from command 
+        for (int i=0; buffer[i]!='\n'; i++) {
+            if (buffer[i] != ' ') {
+                words_command[j][k] = buffer[i];
+                k++;
+            } else {
+                words_command[j][k] = '\0';
+                j++;
+                k = 0;
+            }
+        }
+        if (!is_command_valid(words_command)) {
             printf("Invalid command. Please verify your input.\n");
         } else {
             if (!strcmp(buffer, "exit\n")) break;
 
-            n=sendto(fd,buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
+            n=sendto(fd,words_command, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
             if(n==-1) /*error*/ exit(1);
 
             addrlen=sizeof(addr);
-            n=recvfrom(fd,buffer,128,0, (struct sockaddr*)&addr,&addrlen);
+            n=recvfrom(fd, buffer,128,0, (struct sockaddr*)&addr,&addrlen);
             if(n==-1) /*error*/ exit(1);
             
-            write(1,"echo: ",6); write(1, buffer, n);
+            write(1, buffer, n);
         }
     }
     free(asip);
     freeaddrinfo(res);
     close(fd);
- }
+ }  

@@ -1,23 +1,7 @@
 #include "verify_commands.h"
 #include <sys/types.h>
 
- bool is_command_valid(char *command) {
-    char words_command[10][20] = {0};  
-    int j = 0, k = 0;
-
-    // extract words from command 
-    for (int i=0; command[i]!='\n'; i++) {
-        printf("%c\n", command[i]);
-        if (command[i] != ' ') {
-            words_command[j][k] = command[i];
-            k++;
-        } else {
-            words_command[j][k] = '\0';
-            j++;
-            k = 0;
-        }
-    }
-
+ bool is_command_valid(char words_command[10][20]) {
     if ((!strcmp(words_command[0], "exit") ||
     (!strcmp(words_command[0], "logout")) ||
     (!strcmp(words_command[0], "unregister")) ||

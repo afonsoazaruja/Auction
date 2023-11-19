@@ -3,7 +3,6 @@
 #include "handle_requests.h"
 #define DEFAULT_PORT "58023"
 
-
 int main(int argc, char **argv) {
     bool verbose = false;
     ssize_t n;

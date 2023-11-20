@@ -66,12 +66,13 @@ int main(int argc, char **argv) {
                 k = 0;
             }
         }
-        puts(words_command[0]);
         if (!is_command_valid(words_command)) {
             printf("Invalid command. Please verify your input.\n");
         } else {
-            puts(words_command[0]);
             if (!strcmp(buffer, "exit\n")) break;
+
+            printf("Sent: %s %s %s\n", words_command[0],
+            words_command[1], words_command[2]);
 
             n=sendto(fd,words_command, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
             if(n==-1) /*error*/ exit(1);

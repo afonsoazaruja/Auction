@@ -18,7 +18,7 @@
     !strcmp(words_command[0], "l"))
         strcpy(words_command[0], "LST");
     else if (!strcmp(words_command[0], "login")) {
-        strcpy(words_command[0], "LOU");
+        strcpy(words_command[0], "LIN");
         return verify_login(words_command);
     }
     else if (!strcmp(words_command[0], "open"))
@@ -48,11 +48,9 @@ bool is_UID(char *str) {
 bool is_password(char *str) {  
     int length = strlen(str);
     if (length != 8) return false;  
-    puts("PASSED PASS LENGTH TEST");
 
     for (int i = 0; i < length; i++) 
         if (!isalnum(str[i])) return false;
-    puts("PASSED IS_PASSWORD TEST");
     return true;
 }
 

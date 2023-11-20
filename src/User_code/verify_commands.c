@@ -2,33 +2,40 @@
 #include <sys/types.h>
 
  bool is_command_valid(char words_command[10][20]) {
-    if ((!strcmp(words_command[0], "exit") ||
-    (!strcmp(words_command[0], "logout")) ||
-    (!strcmp(words_command[0], "unregister")) ||
-    (!strcmp(words_command[0], "myauctions")) ||
-    (!strcmp(words_command[0], "ma")) || 
-    (!strcmp(words_command[0], "mybids")) ||
-    (!strcmp(words_command[0], "mb")) || 
-    (!strcmp(words_command[0], "list")) || 
-    (!strcmp(words_command[0], "l"))) && strlen(words_command[1]) == 0) return true;
-    else if (!strcmp(words_command[0], "login")) return verify_login(words_command);
-    else if (!strcmp(words_command[0], "open")) return verify_open(words_command);
-
-    return false;
+    if (!strcmp(words_command[0], "exit"))
+        return true;
+    else if (!strcmp(words_command[0], "logout"))
+        strcpy(words_command[0], "LOU");
+    else if (!strcmp(words_command[0], "unregister"))
+        strcpy(words_command[0], "UNR");
+    else if (!strcmp(words_command[0], "myauctions") || 
+    !strcmp(words_command[0], "ma"))
+        strcpy(words_command[0], "LMA");
+    else if (!strcmp(words_command[0], "mybids") ||
+    !strcmp(words_command[0], "mb"))
+        strcpy(words_command[0], "LMB");
+    else if (!strcmp(words_command[0], "list") ||
+    !strcmp(words_command[0], "l"))
+        strcpy(words_command[0], "LST");
+    else if (!strcmp(words_command[0], "login")) {
+        strcpy(words_command[0], "LOU");
+        return verify_login(words_command);
+    }
+    else if (!strcmp(words_command[0], "open"))
+        return verify_open(words_command);
+    else
+        return false;
+    return true;
  }
 
 bool verify_login(char words_command[10][20]) {
-    puts("VERIFY LOGIN WAS RUNNED");
     if (words_command[1] == NULL) return false;
-    puts("PASSED FIRST LOGIN TEST");
     if (is_UID(words_command[1]) && is_password(words_command[2])) return true;
-    puts("FAILED SECOND LOGIN TEST"); 
     if (is_password(words_command[1]) && strlen(words_command[2]) == 0) return true;
-    puts("FAILED THIRD LOGIN TEST"); 
-    
     return false;
 }
- bool is_UID(char *str) {
+
+bool is_UID(char *str) {
     int length = strlen(str);
     if (length != 6) return false;  
 
@@ -37,7 +44,8 @@ bool verify_login(char words_command[10][20]) {
     
     return true;
 }
- bool is_password(char *str) {  
+
+bool is_password(char *str) {  
     int length = strlen(str);
     if (length != 8) return false;  
     puts("PASSED PASS LENGTH TEST");

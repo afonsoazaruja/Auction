@@ -51,30 +51,17 @@ int main(int argc, char **argv) {
     if(errcode!=0) /*error*/ exit(1);
 
     while(true) {
+        char msg[128] = "NULL"; 
         fgets(buffer, sizeof(buffer), stdin);
-        
-        char words_command[10][20] = {0};  
-        int j = 0, k = 0;
-        // extract words from command 
-        for (int i=0; buffer[i]!='\n'; i++) {
-            if (buffer[i] != ' ') {
-                words_command[j][k] = buffer[i];
-                k++;
-            } else {
-                words_command[j][k] = '\0';
-                j++;
-                k = 0;
-            }
-        }
-        if (!is_command_valid(words_command)) {
-            printf("Invalid command. Please verify your input.\n");
+
+        if (!command_selection(buffer, &msg)) {
+            printf("ERR: %s", msg);
         } else {
-            if (!strcmp(buffer, "exit\n")) break;
+            printf("%s", msg);
 
-            printf("Sent: %s %s %s\n", words_command[0],
-            words_command[1], words_command[2]);
+            if (!strcmp(msg, "EXT\n")) break;
 
-            n=sendto(fd,words_command, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
+            n=sendto(fd, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
             if(n==-1) /*error*/ exit(1);
 
             addrlen=sizeof(addr);

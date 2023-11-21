@@ -1,37 +1,50 @@
 #include "verify_commands.h"
 #include <sys/types.h>
 
- bool is_command_valid(char words_command[10][20]) {
-    if (!strcmp(words_command[0], "exit"))
-        return true;
-    else if (!strcmp(words_command[0], "logout"))
-        strcpy(words_command[0], "LOU");
-    else if (!strcmp(words_command[0], "unregister"))
-        strcpy(words_command[0], "UNR");
-    else if (!strcmp(words_command[0], "myauctions") || 
-    !strcmp(words_command[0], "ma"))
-        strcpy(words_command[0], "LMA");
-    else if (!strcmp(words_command[0], "mybids") ||
-    !strcmp(words_command[0], "mb"))
-        strcpy(words_command[0], "LMB");
-    else if (!strcmp(words_command[0], "list") ||
-    !strcmp(words_command[0], "l"))
-        strcpy(words_command[0], "LST");
-    else if (!strcmp(words_command[0], "login")) {
-        strcpy(words_command[0], "LIN");
-        return verify_login(words_command);
-    }
-    else if (!strcmp(words_command[0], "open"))
-        return verify_open(words_command);
-    else
-        return false;
-    return true;
- }
 
-bool verify_login(char words_command[10][20]) {
-    if (words_command[1] == NULL) return false;
-    if (is_UID(words_command[1]) && is_password(words_command[2])) return true;
-    if (is_password(words_command[1]) && strlen(words_command[2]) == 0) return true;
+bool command_selection(char *buffer, char (*msg)[128]) {
+    char args[5][128];
+    char cmd[10];
+    sscanf(buffer, "%s", cmd); // extract command
+
+    if (!strcmp(cmd, "login")) {
+        sscanf(buffer, "%*s %s %s", args[0], args[1]); // %*s ignores 1st string
+        if (!verify_login(args[0], args[1])) {
+            sprintf(*msg, "invalid UID or PWD\n");
+            return false;
+        }
+        else
+            sprintf(*msg, "LIN %s %s\n", args[0], args[1]);
+    }
+    else if (!strcmp(cmd, "logout")) {
+        sprintf(*msg, "LOU\n");
+    }
+    else if (!strcmp(cmd, "unregister")) {
+        sprintf(*msg, "UNR\n");
+    }
+    else if (!strcmp(cmd, "myauctions") || !strcmp(cmd, "ma")) {
+        sprintf(*msg, "LMA\n");
+    }
+    else if (!strcmp(cmd, "my bids") || !strcmp(cmd, "mb")) {
+        sprintf(*msg, "LMB\n");
+    }
+    else if (!strcmp(cmd, "list") || !strcmp(cmd, "l")) {
+        sprintf(*msg, "LST\n");
+    }
+    else if (!strcmp(cmd, "open")) {
+        sprintf(*msg, "OPA\n");
+    }
+    else if (!strcmp(cmd, "exit")) {
+        sprintf(*msg, "EXT\n");
+    }
+    else
+        sprintf(*msg, "Invalid input\n");
+    return true;
+}
+
+bool verify_login(char *UID, char *PWD) {
+    if (UID == NULL || PWD == NULL) return false;
+    if (is_UID(UID) && is_PWD(PWD)) return true;
     return false;
 }
 
@@ -45,7 +58,7 @@ bool is_UID(char *str) {
     return true;
 }
 
-bool is_password(char *str) {  
+bool is_PWD(char *str) {  
     int length = strlen(str);
     if (length != 8) return false;  
 

@@ -19,14 +19,14 @@ typedef enum {
 
 void handle_requests_udp(char* port, bool verbose);
 void handle_requests_tcp(char* port, bool verbose);
-void execute_command_udp(int fd, struct sockaddr_in addr, char words_command[10][20]);
+void execute_command_udp(int fd, struct sockaddr_in addr, char* msg);
 void send_msg_to_user(int fd, struct sockaddr_in addr, char *message);
-void ex_login(int fd, struct sockaddr_in addr, char words_command[10][20]);
-void ex_logout(int fd, struct sockaddr_in addr, char words_command[10][20]);
-void ex_unregister(int fd, struct sockaddr_in addr, char words_command[10][20]);
-void ex_myauctions(int fd, struct sockaddr_in addr, char words_command[10][20]);
-void ex_mybids(int fd, struct sockaddr_in addr, char words_command[10][20]);
-void ex_list(int fd, struct sockaddr_in addr, char words_command[10][20]);
-void ex_show_record(int fd, struct sockaddr_in addr, char words_command[10][20]);
+void ex_login(int fd, struct sockaddr_in addr, char* msg);
+void ex_logout(int fd, struct sockaddr_in addr, char* msg);
+void ex_unregister(int fd, struct sockaddr_in addr, char* msg);
+void ex_myauctions(int fd, struct sockaddr_in addr, char* msg);
+void ex_mybids(int fd, struct sockaddr_in addr, char* msg);
+void ex_list(int fd, struct sockaddr_in addr, char* msg);
+void ex_show_record(int fd, struct sockaddr_in addr, char* msg);
 
 #endif

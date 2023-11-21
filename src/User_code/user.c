@@ -54,21 +54,19 @@ int main(int argc, char **argv) {
         char msg[128] = "NULL"; 
         fgets(buffer, sizeof(buffer), stdin);
 
-        if (!command_selection(buffer, &msg)) {
+        if (!is_input_valid(buffer, &msg)) {
             printf("ERR: %s", msg);
         } else {
-            printf("%s", msg);
-
             if (!strcmp(msg, "EXT\n")) break;
 
             n=sendto(fd, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
             if(n==-1) /*error*/ exit(1);
 
-            addrlen=sizeof(addr);
+            addrlen=sizeof(addr);   
             n=recvfrom(fd, buffer,128,0, (struct sockaddr*)&addr,&addrlen);
             if(n==-1) /*error*/ exit(1);
             
-            write(1, buffer, n);
+           write(1, buffer, n);
         }
     }
     free(asip);

@@ -7,7 +7,7 @@ void handle_requests_udp(char *port, bool verbose) {
     socklen_t addrlen;
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
-    char words_command[10][20];
+    char msg[128];
 
     fd = socket(AF_INET, SOCK_DGRAM, 0); 
     if (fd == -1) /*error*/ exit(1);
@@ -25,23 +25,12 @@ void handle_requests_udp(char *port, bool verbose) {
 
     while (true) {
         addrlen = sizeof(addr);
-        n = recvfrom(fd, words_command, 128, 0, (struct sockaddr*)&addr, &addrlen);
+        n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
         if (n == -1) /*error*/ exit(1);
 
-        int num_words_received = 0;
-        // Iterate through the array until an empty string is found
-        while (words_command[num_words_received][0] != '\0') 
-            num_words_received++;
-        // It is only being able to receive one word (not using array of strings should solve)
-        printf("Num of words received: %d\n", num_words_received);
-
-        // This printf is not working idk why...
-        printf("received: ");
-        for (int i = 0; i < num_words_received; ++i) 
-            // nor this printf
-            printf("%s ", words_command[i]);
+        printf("received: %s", msg);
         
-        execute_command_udp(fd, addr, words_command);       
+        execute_command_udp(fd, addr, msg);       
     }
     freeaddrinfo(res);
     close(fd);
@@ -54,7 +43,7 @@ void handle_requests_tcp(char *port, bool verbose) {
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
     char buffer[128];
-    char words_command[10][20];
+    char *msg;
 
     fd = socket(AF_INET, SOCK_STREAM, 0);  // TCP socket
     if (fd == -1) /*error*/ exit(1);
@@ -76,7 +65,7 @@ void handle_requests_tcp(char *port, bool verbose) {
         addrlen = sizeof(addr);
         if((newfd=accept(fd,(struct sockaddr*)&addr, &addrlen))==-1) /*error*/ exit(1);
         
-        n=read(newfd,words_command,128);
+        n=read(newfd, msg, 128);
         if(n==-1)/*error*/exit(1);
         write(1,"received: ",10); write(1,buffer,n);
 
@@ -89,51 +78,55 @@ void handle_requests_tcp(char *port, bool verbose) {
     close(fd);
 }
 
-void execute_command_udp(int fd, struct sockaddr_in addr, char words_command[10][20]) {
-    if (!strcmp(words_command[0], "LIN")) 
-        ex_login(fd, addr, words_command);
-    else if (!strcmp(words_command[0], "logout")) 
-        ex_logout(fd, addr, words_command); 
-    else if (!strcmp(words_command[0], "unregister")) 
-        ex_unregister(fd, addr, words_command); 
-    else if (!strcmp(words_command[0], "myauctions") ||
-    !strcmp(words_command[0], "ma")) 
-        ex_myauctions(fd, addr, words_command); 
-    else if (!strcmp(words_command[0], "mybids") ||
-    !strcmp(words_command[0], "mb")) 
-        ex_mybids(fd, addr, words_command); 
-    else if (!strcmp(words_command[0], "list") ||
-    !strcmp(words_command[0], "l")) 
-        ex_list(fd, addr, words_command); 
-    else if (!strcmp(words_command[0], "show_record") ||
-    !strcmp(words_command[0], "sr")) 
-        ex_show_record(fd, addr, words_command); 
+void execute_command_udp(int fd, struct sockaddr_in addr, char *msg) {
+    char args[5][128];
+    char cmd[10];
+    sscanf(msg, "%s", cmd); // extract command
+
+    if (!strcmp(cmd, "LIN")) 
+        ex_login(fd, addr, msg);
+    else if (!strcmp(cmd, "logout")) 
+        ex_logout(fd, addr, msg); 
+    else if (!strcmp(cmd, "unregister")) 
+        ex_unregister(fd, addr, msg); 
+    else if (!strcmp(cmd, "myauctions") ||
+    !strcmp(cmd, "ma")) 
+        ex_myauctions(fd, addr, msg); 
+    else if (!strcmp(cmd, "mybids") ||
+    !strcmp(cmd, "mb")) 
+        ex_mybids(fd, addr, msg); 
+    else if (!strcmp(cmd, "list") ||
+    !strcmp(cmd, "l")) 
+        ex_list(fd, addr, msg); 
+    else if (!strcmp(cmd, "show_record") ||
+    !strcmp(cmd, "sr")) 
+        ex_show_record(fd, addr, msg); 
 }
 
-void send_msg_to_user(int fd, struct sockaddr_in addr, char *message) {
-    int n = sendto(fd, message, strlen(message), 0, (struct sockaddr*)&addr, sizeof(addr));
+void send_msg_to_user(int fd, struct sockaddr_in addr, char *msg) {
+    int n = sendto(fd, msg, strlen(msg), 0, (struct sockaddr*)&addr, sizeof(addr));
     if (n == -1) /*error*/ exit(1);
 }
 
-void ex_login(int fd, struct sockaddr_in addr, char words_command[10][20]) {
+void ex_login(int fd, struct sockaddr_in addr, char *msg) {
     // To do (incomplete)
     send_msg_to_user(fd, addr, "successful login\n");
 }
-void ex_logout(int fd, struct sockaddr_in addr, char words_command[10][20]) {
+void ex_logout(int fd, struct sockaddr_in addr, char *msg) {
     // To do
 }
-void ex_unregister(int fd, struct sockaddr_in addr, char words_command[10][20]) {
+void ex_unregister(int fd, struct sockaddr_in addr, char *msg) {
     // To do
 }
-void ex_myauctions(int fd, struct sockaddr_in addr, char words_command[10][20]) {
+void ex_myauctions(int fd, struct sockaddr_in addr, char *msg) {
     // To do
 }
-void ex_mybids(int fd, struct sockaddr_in addr, char words_command[10][20]) {
+void ex_mybids(int fd, struct sockaddr_in addr, char *msg) {
     // To do
 }
-void ex_list(int fd, struct sockaddr_in addr, char words_command[10][20]) {
+void ex_list(int fd, struct sockaddr_in addr, char *msg) {
     // To do
 }
-void ex_show_record(int fd, struct sockaddr_in addr, char words_command[10][20]) {
+void ex_show_record(int fd, struct sockaddr_in addr, char *msg) {
     // To do
 }

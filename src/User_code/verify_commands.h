@@ -12,10 +12,10 @@ typedef enum {
 } bool;
 #endif
 
-bool command_selection(char *buffer, char (*msg)[128]);
-bool verify_login(char *UID, char *PWD);
+bool is_input_valid(char *buffer, char (*msg)[128]);
+bool is_login_valid(char *UID, char *PWD);
 bool is_UID(char *str);
-bool is_PWD(char *str);
+bool is_password(char *str);
 bool verify_open(char words_command[10][20]);
 
 #endif

@@ -29,6 +29,7 @@ void handle_requests_udp(char *port, bool verbose) {
         if (n == -1) /*error*/ exit(1);
 
         printf("received: %s", msg);
+        printf("new: %s", msg);
         
         execute_command_udp(fd, addr, msg);       
     }
@@ -85,21 +86,17 @@ void execute_command_udp(int fd, struct sockaddr_in addr, char *msg) {
 
     if (!strcmp(cmd, "LIN")) 
         ex_login(fd, addr, msg);
-    else if (!strcmp(cmd, "logout")) 
+    else if (!strcmp(cmd, "LOU")) 
         ex_logout(fd, addr, msg); 
-    else if (!strcmp(cmd, "unregister")) 
+    else if (!strcmp(cmd, "UNR")) 
         ex_unregister(fd, addr, msg); 
-    else if (!strcmp(cmd, "myauctions") ||
-    !strcmp(cmd, "ma")) 
+    else if (!strcmp(cmd, "LMA")) 
         ex_myauctions(fd, addr, msg); 
-    else if (!strcmp(cmd, "mybids") ||
-    !strcmp(cmd, "mb")) 
+    else if (!strcmp(cmd, "LMB")) 
         ex_mybids(fd, addr, msg); 
-    else if (!strcmp(cmd, "list") ||
-    !strcmp(cmd, "l")) 
+    else if (!strcmp(cmd, "LST")) 
         ex_list(fd, addr, msg); 
-    else if (!strcmp(cmd, "show_record") ||
-    !strcmp(cmd, "sr")) 
+    else if (!strcmp(cmd, "SRC"))
         ex_show_record(fd, addr, msg); 
 }
 
@@ -114,19 +111,25 @@ void ex_login(int fd, struct sockaddr_in addr, char *msg) {
 }
 void ex_logout(int fd, struct sockaddr_in addr, char *msg) {
     // To do
+    send_msg_to_user(fd, addr, "TEST\n");
 }
 void ex_unregister(int fd, struct sockaddr_in addr, char *msg) {
     // To do
+    send_msg_to_user(fd, addr, "TEST\n");
 }
 void ex_myauctions(int fd, struct sockaddr_in addr, char *msg) {
     // To do
+    send_msg_to_user(fd, addr, "TEST\n");
 }
 void ex_mybids(int fd, struct sockaddr_in addr, char *msg) {
     // To do
+    send_msg_to_user(fd, addr, "TEST\n");
 }
 void ex_list(int fd, struct sockaddr_in addr, char *msg) {
     // To do
+    send_msg_to_user(fd, addr, "TEST\n");
 }
 void ex_show_record(int fd, struct sockaddr_in addr, char *msg) {
     // To do
+    send_msg_to_user(fd, addr, "TEST\n");
 }

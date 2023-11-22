@@ -12,6 +12,7 @@ int main(int argc, char **argv) {
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
     char buffer[128];
+    char msg[128]; 
     char port[6] = DEFAULT_PORT;
     char *asip = getIpAdress();
     
@@ -51,10 +52,9 @@ int main(int argc, char **argv) {
     if(errcode!=0) /*error*/ exit(1);
 
     while(true) {
-        char msg[128] = "NULL"; 
         fgets(buffer, sizeof(buffer), stdin);
 
-        if (!is_input_valid(buffer, &msg)) {
+        if (!is_input_valid(buffer, msg)) {
             printf("ERR: %s", msg);
         } else {
             if (!strcmp(msg, "EXT\n")) break;

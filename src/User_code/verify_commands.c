@@ -2,43 +2,46 @@
 #include <sys/types.h>
 
 
-bool is_input_valid(char *buffer, char (*msg)[128]) {
+bool is_input_valid(char *buffer, char *msg) {
     char args[5][128];
     char cmd[10];
     sscanf(buffer, "%s", cmd); // extract command
-
+    
     if (!strcmp(cmd, "login")) {
         sscanf(buffer, "%*s %s %s", args[0], args[1]); // %*s ignores 1st string
         if (!is_login_valid(args[0], args[1])) {
-            sprintf(*msg, "invalid UID or password\n");
+            sprintf(msg, "invalid UID or password\n");
             return false;
         }
         else 
-            sprintf(*msg, "LIN %s %s\n", args[0], args[1]);
+            sprintf(msg, "LIN %s %s\n", args[0], args[1]);
     }
     else if (!strcmp(cmd, "logout")) {
-        sprintf(*msg, "LOU\n");
+        sprintf(msg, "LOU\n");
     }
     else if (!strcmp(cmd, "unregister")) {
-        sprintf(*msg, "UNR\n");
+        sprintf(msg, "UNR\n");
     }
     else if (!strcmp(cmd, "myauctions") || !strcmp(cmd, "ma")) {
-        sprintf(*msg, "LMA\n");
+        sprintf(msg, "LMA\n");
     }
     else if (!strcmp(cmd, "my bids") || !strcmp(cmd, "mb")) {
-        sprintf(*msg, "LMB\n");
+        sprintf(msg, "LMB\n");
     }
     else if (!strcmp(cmd, "list") || !strcmp(cmd, "l")) {
-        sprintf(*msg, "LST\n");
+        sprintf(msg, "LST\n");
     }
     else if (!strcmp(cmd, "open")) {
-        sprintf(*msg, "OPA\n");
+        sprintf(msg, "OPA\n");
     }
     else if (!strcmp(cmd, "exit")) {
-        sprintf(*msg, "EXT\n");
+        sprintf(msg, "EXT\n");
+    }
+    else if (!strcmp(cmd, "show_record") || !strcmp(cmd, "sr")) {
+        sprintf(msg, "SRC\n");
     }
     else {
-        sprintf(*msg, "Invalid input\n");
+        sprintf(msg, "Invalid input\n");
         return false;
     }
     return true;

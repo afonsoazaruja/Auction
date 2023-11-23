@@ -60,7 +60,8 @@ void execute_command_udp(int fd, struct sockaddr_in addr, char *msg) {
 
 void send_msg_to_user(int fd, struct sockaddr_in addr, char *msg) {
     int n = sendto(fd, msg, strlen(msg), 0, (struct sockaddr*)&addr, sizeof(addr));
-    if (n == -1) /*error*/ exit(1);
+    if (n == -1) /*error*/ exit(1); 
+    
 }
 
 void ex_login(int fd, struct sockaddr_in addr) {

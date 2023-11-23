@@ -36,27 +36,25 @@ void handle_requests_udp(char *port, bool verbose) {
     close(fd);
 }
 
-
 void execute_command_udp(int fd, struct sockaddr_in addr, char *msg) {
-    char args[5][128];
     char cmd[10];
     sscanf(msg, "%s", cmd); // extract command
 
-    if (!strcmp(cmd, "LIN")) 
+    if (strcmp(cmd, "LIN") == 0)
         ex_login(fd, addr);
-    else if (!strcmp(cmd, "LOU")) 
-        ex_logout(fd, addr, msg); 
-    else if (!strcmp(cmd, "UNR")) 
-        ex_unregister(fd, addr, msg); 
-    else if (!strcmp(cmd, "LMA")) 
-        ex_myauctions(fd, addr, msg); 
-    else if (!strcmp(cmd, "LMB")) 
-        ex_mybids(fd, addr, msg); 
-    else if (!strcmp(cmd, "LST")) 
-        ex_list(fd, addr, msg); 
-    else if (!strcmp(cmd, "SRC"))
+    else if (strcmp(cmd, "LOU") == 0)
+        ex_logout(fd, addr, msg);
+    else if (strcmp(cmd, "UNR") == 0)
+        ex_unregister(fd, addr, msg);
+    else if (strcmp(cmd, "LMA") == 0)
+        ex_myauctions(fd, addr, msg);
+    else if (strcmp(cmd, "LMB") == 0)
+        ex_mybids(fd, addr, msg);
+    else if (strcmp(cmd, "LST") == 0)
+        ex_list(fd, addr, msg);
+    else if (strcmp(cmd, "SRC") == 0)
         ex_show_record(fd, addr, msg);
-    }
+}
 
 void send_msg_to_user(int fd, struct sockaddr_in addr, char *msg) {
     int n = sendto(fd, msg, strlen(msg), 0, (struct sockaddr*)&addr, sizeof(addr));
@@ -120,7 +118,7 @@ void handle_requests_tcp(char *port, bool verbose) {
 
     while (1) {
         addrlen = sizeof(addr);
-        if((newfd=accept(fd,(struct sockaddr*)&addr, &addrlen))==-1) /*error*/ exit(1);
+        if((newfd=accept(fd,(struct sockaddr*)&addr, &addrlen))==-1)/*error*/exit(1);
         
         n=read(newfd, msg, 128);
         if(n==-1)/*error*/exit(1);

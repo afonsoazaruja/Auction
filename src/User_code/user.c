@@ -12,7 +12,11 @@ int main(int argc, char **argv) {
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
     char buffer[128];
-    char msg[128]; 
+    char *msg = malloc(128); 
+    if (msg == NULL) {
+        perror("Memory allocation for msg failed");
+        exit(EXIT_FAILURE);
+    }
     char port[6] = DEFAULT_PORT;
     char *asip = getIpAdress();
     
@@ -51,24 +55,28 @@ int main(int argc, char **argv) {
     errcode=getaddrinfo(asip, port, &hints, &res);
     if(errcode!=0) /*error*/ exit(1);
 
-    while(true) {
+    while (true) {
+        msg[0] = '\0'; // reset message
+        printf("Message to be sent: %s\n", msg);
         fgets(buffer, sizeof(buffer), stdin);
 
         if (!is_input_valid(buffer, msg)) {
-            printf("ERR: %s", msg);
+            printf("ERR: %s\n", msg);
         } else {
             if (!strcmp(msg, "EXT\n")) break;
 
-            n=sendto(fd, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
-            if(n==-1) /*error*/ exit(1);
+            n = sendto(fd, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
+            if (n == -1) /*error*/ exit(1);
 
-            addrlen=sizeof(addr);   
-            n=recvfrom(fd, buffer,128,0, (struct sockaddr*)&addr,&addrlen);
-            if(n==-1) /*error*/ exit(1);
-            
-           write(1, buffer, n);
+            addrlen = sizeof(addr);
+            n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
+            if (n == -1) /*error*/ exit(1);
+
+            write(1, msg, n);
         }
     }
+
+    free(msg);
     free(asip);
     freeaddrinfo(res);
     close(fd);

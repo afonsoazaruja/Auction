@@ -28,13 +28,68 @@ void handle_requests_udp(char *port, bool verbose) {
         n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
         if (n == -1) /*error*/ exit(1);
 
+        msg[n] = '\0';
         printf("received: %s", msg);
-        printf("new: %s", msg);
-        
         execute_command_udp(fd, addr, msg);       
     }
     freeaddrinfo(res);
     close(fd);
+}
+
+
+void execute_command_udp(int fd, struct sockaddr_in addr, char *msg) {
+    char args[5][128];
+    char cmd[10];
+    sscanf(msg, "%s", cmd); // extract command
+
+    if (!strcmp(cmd, "LIN")) 
+        ex_login(fd, addr);
+    else if (!strcmp(cmd, "LOU")) 
+        ex_logout(fd, addr, msg); 
+    else if (!strcmp(cmd, "UNR")) 
+        ex_unregister(fd, addr, msg); 
+    else if (!strcmp(cmd, "LMA")) 
+        ex_myauctions(fd, addr, msg); 
+    else if (!strcmp(cmd, "LMB")) 
+        ex_mybids(fd, addr, msg); 
+    else if (!strcmp(cmd, "LST")) 
+        ex_list(fd, addr, msg); 
+    else if (!strcmp(cmd, "SRC"))
+        ex_show_record(fd, addr, msg);
+    }
+
+void send_msg_to_user(int fd, struct sockaddr_in addr, char *msg) {
+    int n = sendto(fd, msg, strlen(msg), 0, (struct sockaddr*)&addr, sizeof(addr));
+    if (n == -1) /*error*/ exit(1);
+}
+
+void ex_login(int fd, struct sockaddr_in addr) {
+    // To do (incomplete)
+    send_msg_to_user(fd, addr, "successful login\n");
+}
+void ex_logout(int fd, struct sockaddr_in addr, char *msg) {
+    // To do
+    send_msg_to_user(fd, addr, "successful logout\n");
+}
+void ex_unregister(int fd, struct sockaddr_in addr, char *msg) {
+    // To do
+    send_msg_to_user(fd, addr, "TEST\n");
+}
+void ex_myauctions(int fd, struct sockaddr_in addr, char *msg) {
+    // To do
+    send_msg_to_user(fd, addr, "TEST\n");
+}
+void ex_mybids(int fd, struct sockaddr_in addr, char *msg) {
+    // To do
+    send_msg_to_user(fd, addr, "TEST\n");
+}
+void ex_list(int fd, struct sockaddr_in addr, char *msg) {
+    // To do
+    send_msg_to_user(fd, addr, "TEST\n");
+}
+void ex_show_record(int fd, struct sockaddr_in addr, char *msg) {
+    // To do
+    send_msg_to_user(fd, addr, "TEST\n");
 }
 
 void handle_requests_tcp(char *port, bool verbose) {
@@ -77,59 +132,4 @@ void handle_requests_tcp(char *port, bool verbose) {
     }
     freeaddrinfo(res);
     close(fd);
-}
-
-void execute_command_udp(int fd, struct sockaddr_in addr, char *msg) {
-    char args[5][128];
-    char cmd[10];
-    sscanf(msg, "%s", cmd); // extract command
-
-    if (!strcmp(cmd, "LIN")) 
-        ex_login(fd, addr, msg);
-    else if (!strcmp(cmd, "LOU")) 
-        ex_logout(fd, addr, msg); 
-    else if (!strcmp(cmd, "UNR")) 
-        ex_unregister(fd, addr, msg); 
-    else if (!strcmp(cmd, "LMA")) 
-        ex_myauctions(fd, addr, msg); 
-    else if (!strcmp(cmd, "LMB")) 
-        ex_mybids(fd, addr, msg); 
-    else if (!strcmp(cmd, "LST")) 
-        ex_list(fd, addr, msg); 
-    else if (!strcmp(cmd, "SRC"))
-        ex_show_record(fd, addr, msg); 
-}
-
-void send_msg_to_user(int fd, struct sockaddr_in addr, char *msg) {
-    int n = sendto(fd, msg, strlen(msg), 0, (struct sockaddr*)&addr, sizeof(addr));
-    if (n == -1) /*error*/ exit(1);
-}
-
-void ex_login(int fd, struct sockaddr_in addr, char *msg) {
-    // To do (incomplete)
-    send_msg_to_user(fd, addr, "successful login\n");
-}
-void ex_logout(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_unregister(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_myauctions(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_mybids(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_list(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_show_record(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
 }

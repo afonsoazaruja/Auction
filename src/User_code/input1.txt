@@ -1,0 +1,4 @@
+sleep 2
+login 104168 password
+sleep 2
+logout

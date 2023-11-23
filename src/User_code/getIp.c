@@ -21,13 +21,9 @@ char* getIpAdress() {
         fprintf(stderr,"error: getaddrinfo: %s\n",gai_strerror(errcode));
         exit(EXIT_FAILURE);
     } else {
-        // PRINT TO BE DELETED, ONLY HERE AS PROOF THAT IT WORKS.
-        printf("canonical hostname: %s\n",res->ai_canonname);
         for(p=res;p!=NULL;p=p->ai_next){
             addr=&((struct sockaddr_in *)p->ai_addr)->sin_addr;
             inet_ntop(p->ai_family, addr, ipAddress, INET_ADDRSTRLEN);
-            // PRINT TO BE DELETED, ONLY HERE AS PROOF THAT IT WORKS.
-            printf("internet address: %s (%08lX)\n", ipAddress, (long unsigned int)ntohl(addr->s_addr));
         }
         freeaddrinfo(res);
     }

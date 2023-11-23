@@ -10,7 +10,7 @@ bool is_input_valid(char *buffer, char *msg) {
     if (!strcmp(cmd, "login")) {
         sscanf(buffer, "%*s %s %s", args[0], args[1]); // %*s ignores 1st string
         if (!is_login_valid(args[0], args[1])) {
-            sprintf(msg, "invalid UID or password\n");
+            sprintf(msg, "invalid UID or password");
             return false;
         }
         else 
@@ -41,7 +41,7 @@ bool is_input_valid(char *buffer, char *msg) {
         sprintf(msg, "SRC\n");
     }
     else {
-        sprintf(msg, "Invalid input\n");
+        sprintf(msg, "Invalid input");
         return false;
     }
     return true;

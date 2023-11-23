@@ -68,9 +68,7 @@ int main(int argc, char **argv) {
     if (n == -1) /*error*/ exit(1);
 
     buffer[n] = '\0';
-    printf("%s", buffer);
     analyze_reply(fd, buffer, n);
-    // puts(buffer);
     write(1, buffer, strlen(buffer));
 
     freeaddrinfo(res);
@@ -78,24 +76,18 @@ int main(int argc, char **argv) {
  }
 
 void analyze_reply(int fd, char *buffer, int n) {
-    char type_reply[100];
-    printf("%s", buffer);
+    char type_reply[4];
     sscanf(buffer, "%s", type_reply); 
-    type_reply[4] = '\0';
-    // puts(type_reply);
 
     if (strcmp(type_reply, "RLI") == 0) { // reply for login
-        char status[100];
+        char status[4];
         sscanf(buffer, "%*s %s", status);
-        printf("Status : %s", status);
-        if (strcmp(status, "OK\n") == 0) {
-            sprintf(buffer, "successful login");
-        } else if (strcmp(status, "NOK\n") == 0) {
-            sprintf(buffer, "incorrect login attempt");
-        } else if (strcmp(status, "REG\n") == 0) {
-            puts("GOT HERE");
-            sprintf(buffer, "new user registered");
-            printf("BUFFER AFTER REG: %s", buffer);
+        if (strcmp(status, "OK") == 0) {
+            sprintf(buffer, "successful login\n");
+        } else if (strcmp(status, "NOK") == 0) {
+            sprintf(buffer, "incorrect login attempt\n");
+        } else if (strcmp(status, "REG") == 0) {
+            sprintf(buffer, "new user registered\n");
         }
     }
 }

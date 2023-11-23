@@ -14,7 +14,13 @@ typedef enum {
 } bool;
 #endif
 
-bool is_input_valid(char *buffer, int *socket_type);
+typedef struct session{
+    bool logged;
+    char UID[10];
+    char password[10];
+} session;
+
+bool is_input_valid(char *buffer, int *socket_type, struct session *user);
 bool is_login_valid(char *UID, char *PWD);
 bool is_UID(char *str);
 bool is_password(char *str);

@@ -5,6 +5,8 @@ int main(int argc, char **argv) {
     char *asip = getIpAdress();
     char buffer[128];
     int socket_type;
+
+    session user = {false, "NULL", "NULL"};
     
     // Update ip and/or port 
     if (argc > 1) {
@@ -30,9 +32,10 @@ int main(int argc, char **argv) {
     printf("asip: %s\n", asip);
     printf("port: %s\n", port);
 
+
     while (true) {
         fgets(buffer, sizeof(buffer), stdin);
-        if (!is_input_valid(buffer, &socket_type)) {
+        if (!is_input_valid(buffer, &socket_type, &user)) {
             printf("ERR: %s\n", buffer);
         } else {
             if (strcmp(buffer, "EXT\n") == 0) break;
@@ -41,7 +44,7 @@ int main(int argc, char **argv) {
         }
     }
     free(asip);
- }  
+}  
 
  void send_request_udp(char *port, char *asip, char *buffer) {
     int fd,errcode;

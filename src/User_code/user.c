@@ -57,7 +57,6 @@ int main(int argc, char **argv) {
     hints.ai_family = AF_INET; // IPv4
     hints.ai_socktype = SOCK_DGRAM; // UDP socket
 
-    // Does not pass if you pick random ip and/or port. 
     errcode=getaddrinfo(asip, port, &hints, &res);
     if(errcode!=0) /*error*/ exit(1);
 
@@ -68,11 +67,38 @@ int main(int argc, char **argv) {
     n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
     if (n == -1) /*error*/ exit(1);
 
-    write(1, buffer, n);
+    buffer[n] = '\0';
+    printf("%s", buffer);
+    analyze_reply(fd, buffer, n);
+    // puts(buffer);
+    write(1, buffer, strlen(buffer));
 
     freeaddrinfo(res);
     close(fd);
  }
+
+void analyze_reply(int fd, char *buffer, int n) {
+    char type_reply[100];
+    printf("%s", buffer);
+    sscanf(buffer, "%s", type_reply); 
+    type_reply[4] = '\0';
+    // puts(type_reply);
+
+    if (strcmp(type_reply, "RLI") == 0) { // reply for login
+        char status[100];
+        sscanf(buffer, "%*s %s", status);
+        printf("Status : %s", status);
+        if (strcmp(status, "OK\n") == 0) {
+            sprintf(buffer, "successful login");
+        } else if (strcmp(status, "NOK\n") == 0) {
+            sprintf(buffer, "incorrect login attempt");
+        } else if (strcmp(status, "REG\n") == 0) {
+            puts("GOT HERE");
+            sprintf(buffer, "new user registered");
+            printf("BUFFER AFTER REG: %s", buffer);
+        }
+    }
+}
 
  void send_request_tcp(char *port, char *asip, char *buffer) {
     int fd, errcode;

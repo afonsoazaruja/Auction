@@ -16,7 +16,7 @@ bool is_input_valid(char *buffer, int *socket_type) {
             *socket_type = SOCK_DGRAM;
         }
     } else if (strcmp(cmd, "logout") == 0) {
-        sprintf(buffer, "LOU\n");
+        sprintf(buffer, "LOU");
         *socket_type = SOCK_DGRAM;
     } else if (strcmp(cmd, "unregister") == 0) {
         sprintf(buffer, "UNR\n");

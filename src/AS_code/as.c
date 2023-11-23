@@ -21,4 +21,5 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[1], "-v")) verbose = true;  
     }
     handle_requests_udp(port, verbose);
+    handle_requests_tcp(port, verbose);
 }

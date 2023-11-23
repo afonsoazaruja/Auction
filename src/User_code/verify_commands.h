@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <arpa/inet.h>
+
 
 #ifndef __cplusplus // To avoid conflict with C++ bool type
 typedef enum {
@@ -12,7 +14,7 @@ typedef enum {
 } bool;
 #endif
 
-bool is_input_valid(char *buffer);
+bool is_input_valid(char *buffer, int *socket_type);
 bool is_login_valid(char *UID, char *PWD);
 bool is_UID(char *str);
 bool is_password(char *str);

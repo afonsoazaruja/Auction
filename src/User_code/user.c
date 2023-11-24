@@ -3,9 +3,8 @@
 int main(int argc, char **argv) {
     char port[6] = DEFAULT_PORT;
     char *asip = getIpAdress();
-    char buffer[128];
+    char buffer[1000];
     int socket_type;
-
     session user = {false, "NULL", "NULL"};
     
     // Update ip and/or port 
@@ -28,10 +27,6 @@ int main(int argc, char **argv) {
             } 
         }
     }
-    // Print the results (everything tested and working as expected) PRINTS SHALL BE DELETED
-    printf("asip: %s\n", asip);
-    printf("port: %s\n", port);
-
 
     while (true) {
         fgets(buffer, sizeof(buffer), stdin);
@@ -46,8 +41,9 @@ int main(int argc, char **argv) {
     free(asip);
 }  
 
- void send_request_udp(char *port, char *asip, char *buffer) {
-    int fd,errcode;
+
+void send_request_udp(char *port, char *asip, char *buffer) {
+    int fd, errcode;
     ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints, *res;
@@ -67,24 +63,23 @@ int main(int argc, char **argv) {
     if (n == -1) /*error*/ exit(1);
 
     addrlen = sizeof(addr);
-    n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+    n = recvfrom(fd, buffer, 1000, 0, (struct sockaddr*)&addr, &addrlen);
     if (n == -1) /*error*/ exit(1);
 
-    buffer[n] = '\0';
-    analyze_reply(fd, buffer, n);
+    // buffer[n] = '\0';
+    analyze_reply_udp(fd, buffer);
     write(1, buffer, strlen(buffer));
 
     freeaddrinfo(res);
     close(fd);
- }
+}
 
-void analyze_reply(int fd, char *buffer, int n) {
-    char type_reply[4];
-    sscanf(buffer, "%s", type_reply); 
+void analyze_reply_udp(int fd, char *buffer) {
+    char type_reply[5];
+    char status[5];
+    sscanf(buffer, "%s %s", type_reply, status); 
 
     if (strcmp(type_reply, "RLI") == 0) { // reply for login
-        char status[4];
-        sscanf(buffer, "%*s %s", status);
         if (strcmp(status, "OK") == 0) {
             sprintf(buffer, "successful login\n");
         } else if (strcmp(status, "NOK") == 0) {
@@ -92,10 +87,68 @@ void analyze_reply(int fd, char *buffer, int n) {
         } else if (strcmp(status, "REG") == 0) {
             sprintf(buffer, "new user registered\n");
         }
+    } else if (strcmp(type_reply, "RLO") == 0) { // reply for logout
+        if (strcmp(status, "OK") == 0) {
+            sprintf(buffer, "successful logout\n");
+        } else if (strcmp(status, "NOK") == 0) {
+            sprintf(buffer, "user not logged in\n");
+        } else if (strcmp(status, "UNR") == 0) {
+            sprintf(buffer, "unknown user\n");
+        }
+    } else if (strcmp(type_reply, "RUR") == 0) { // reply for unregister
+        if (strcmp(status, "OK") == 0) {
+            sprintf(buffer, "successful unregister\n");
+        } else if (strcmp(status, "NOK") == 0) {
+            sprintf(buffer, "incorrect unregister attempt\n");
+        } else if (strcmp(status, "UNR") == 0) {
+            sprintf(buffer, "unknown user\n");
+        }
+    } else { // cases with list
+        int size = strlen(buffer);
+        printf("%d\n", size);
+        char *list = (char *)malloc(size + 2);       
+        if (list != NULL) {
+            // Use sscanf again to skip the first two words and copy the rest to the output
+            sscanf(buffer, "%*s %*s %[^\n]", list);
+        }        
+        if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions
+            if (strcmp(status, "OK") == 0) {
+                //strncpy(buffer, list, sizeof(list) - 1);
+                sprintf(buffer, "%s\n", list);
+                free(list);
+            } else if (strcmp(status, "NOK") == 0) {
+                sprintf(buffer, "user has no ongoing auctions\n");
+            } else if (strcmp(status, "NLG") == 0) {
+                sprintf(buffer, "user not logged in\n");
+            }
+        } else if (strcmp(type_reply, "RMB") == 0) { // reply for mybids
+            if (strcmp(status, "OK") == 0) {
+                strncpy(buffer, list, sizeof(list) - 1);
+                free(list);
+            } else if (strcmp(status, "NOK") == 0) {
+                sprintf(buffer, "user has no ongoing bids\n");
+            } else if (strcmp(status, "NLG") == 0) {
+                sprintf(buffer, "user is not logged in\n");
+            }
+        } else if (strcmp(type_reply, "RLS") == 0) { // reply for list
+            if (strcmp(status, "OK") == 0) {
+                strncpy(buffer, list, sizeof(list) - 1);
+                free(list);
+            } else if (strcmp(status, "NOK") == 0) {
+                sprintf(buffer, "no auctions are currently active\n");
+            }
+        } else if (strcmp(type_reply, "RRC") == 0) { // reply for show_record
+            if (strcmp(status, "OK") == 0) {
+                strncpy(buffer, list, sizeof(list) - 1);
+                free(list);
+            } else if (strcmp(status, "NOK") == 0) {
+                sprintf(buffer, "the auction does not exist\n");
+            } 
+        }
     }
 }
 
- void send_request_tcp(char *port, char *asip, char *buffer) {
+void send_request_tcp(char *port, char *asip, char *buffer) {
     int fd, errcode;
     ssize_t n;
     struct addrinfo hints, *res;

@@ -11,7 +11,7 @@
 
 int main(int argc, char **argv);
 void send_request_udp(char *port, char *asip, char *buffer);
-void analyze_reply(int fd, char *buffer, int n);
+void analyze_reply_udp(int fd, char *buffer);
 void send_request_tcp(char *port, char *asip, char *buffer);
 
 #endif

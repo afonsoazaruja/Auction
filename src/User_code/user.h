@@ -6,7 +6,10 @@
 #include <string.h>
 #include <errno.h>
 #include "getIp.h"
-#include "verify_commands.h"
+#include "commands.h"
+#include <fcntl.h>
+
+
 #define DEFAULT_PORT "58023" // 58000 + 23
 #define BUFFER_SIZE 10000
 

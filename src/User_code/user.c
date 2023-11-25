@@ -1,6 +1,4 @@
 #include "user.h"
-#include <fcntl.h>
-
 
 int main(int argc, char **argv) {
     int socket_type;
@@ -104,12 +102,12 @@ void analyze_reply_udp(int fd, char *buffer) {
         } else if (strcmp(status, "UNR") == 0) {
             sprintf(buffer, "unknown user\n");
         }
-    } else { // cases with list
+    } 
+    else { // cases with list
         int size = strlen(buffer);
-        printf("%d\n", size);
-        char *list = (char *)malloc(size + 2);       
+        char *list = (char *)malloc(size);       
         if (list != NULL) {
-            // Use sscanf again to skip the first two words and copy the rest to the output
+            // Use sscanf again to skip the first two words and copy the rest to the list
             sscanf(buffer, "%*s %*s %[^\n]", list);
         }        
         if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions

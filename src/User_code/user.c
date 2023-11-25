@@ -1,10 +1,12 @@
 #include "user.h"
+#include <fcntl.h>
+
 
 int main(int argc, char **argv) {
+    int socket_type;
     char port[6] = DEFAULT_PORT;
     char *asip = getIpAdress();
-    char buffer[1000];
-    int socket_type;
+    char *buffer = (char*)malloc(BUFFER_SIZE + 1);
     session user = {false, "NULL", "NULL"};
     
     // Update ip and/or port 
@@ -27,9 +29,8 @@ int main(int argc, char **argv) {
             } 
         }
     }
-
     while (true) {
-        fgets(buffer, sizeof(buffer), stdin);
+        fgets(buffer, BUFFER_SIZE, stdin);
         if (!is_input_valid(buffer, &socket_type, &user)) {
             printf("ERR: %s\n", buffer);
         } else {
@@ -38,9 +39,9 @@ int main(int argc, char **argv) {
             else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
         }
     }
+    free(buffer);
     free(asip);
 }  
-
 
 void send_request_udp(char *port, char *asip, char *buffer) {
     int fd, errcode;
@@ -49,30 +50,30 @@ void send_request_udp(char *port, char *asip, char *buffer) {
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
     
-    fd=socket(AF_INET,SOCK_DGRAM,0); 
-    if(fd==-1) /*error*/exit(1);
+    fd = socket(AF_INET, SOCK_DGRAM, 0); 
+    if (fd == -1) /*error*/exit(1);
 
-    memset(&hints,0,sizeof hints);
+    memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET; // IPv4
     hints.ai_socktype = SOCK_DGRAM; // UDP socket
 
-    errcode=getaddrinfo(asip, port, &hints, &res);
-    if(errcode!=0) /*error*/ exit(1);
+    errcode = getaddrinfo(asip, port, &hints, &res);
+    if (errcode != 0) /*error*/ exit(1);
 
     n = sendto(fd, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
     if (n == -1) /*error*/ exit(1);
 
     addrlen = sizeof(addr);
-    n = recvfrom(fd, buffer, 1000, 0, (struct sockaddr*)&addr, &addrlen);
-    if (n == -1) /*error*/ exit(1);
 
-    // buffer[n] = '\0';
+    n = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addr, &addrlen);
+    if (n == -1) exit(1);
+
     analyze_reply_udp(fd, buffer);
     write(1, buffer, strlen(buffer));
-
     freeaddrinfo(res);
     close(fd);
 }
+
 
 void analyze_reply_udp(int fd, char *buffer) {
     char type_reply[5];
@@ -113,7 +114,7 @@ void analyze_reply_udp(int fd, char *buffer) {
         }        
         if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions
             if (strcmp(status, "OK") == 0) {
-                //strncpy(buffer, list, sizeof(list) - 1);
+                strncpy(buffer, list, sizeof(list) - 1);
                 sprintf(buffer, "%s\n", list);
                 free(list);
             } else if (strcmp(status, "NOK") == 0) {

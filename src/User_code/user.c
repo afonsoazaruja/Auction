@@ -104,46 +104,54 @@ void analyze_reply_udp(int fd, char *buffer) {
         }
     } 
     else { // cases with list
-        int size = strlen(buffer);
-        char *list = (char *)malloc(size);       
+        char *list = (char *)malloc(strlen(buffer));       
         if (list != NULL) {
             // Use sscanf again to skip the first two words and copy the rest to the list
             sscanf(buffer, "%*s %*s %[^\n]", list);
+
+            if (strcmp(type_reply, "RRC") != 0 && strcmp(status, "OK") == 0) {
+                char *token = strtok(list, " ");
+                buffer[0] = '\0';
+                char tmp[4];
+                bool first = true;
+
+                while (token != NULL) {
+                    strcpy(tmp, token);
+                    token = strtok(NULL, " ");
+                    if (token[0] == '1') {
+                        if (!first) strcat(buffer, " ");
+                        strcat(buffer, tmp);
+                        first = false;
+                    }
+                    token = strtok(NULL, " ");
+                }
+                strcat(buffer, "\n");
+            }
         }        
         if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions
-            if (strcmp(status, "OK") == 0) {
-                strncpy(buffer, list, sizeof(list) - 1);
-                sprintf(buffer, "%s\n", list);
-                free(list);
-            } else if (strcmp(status, "NOK") == 0) {
+            if (strcmp(status, "NOK") == 0) {
                 sprintf(buffer, "user has no ongoing auctions\n");
             } else if (strcmp(status, "NLG") == 0) {
                 sprintf(buffer, "user not logged in\n");
             }
         } else if (strcmp(type_reply, "RMB") == 0) { // reply for mybids
-            if (strcmp(status, "OK") == 0) {
-                strncpy(buffer, list, sizeof(list) - 1);
-                free(list);
-            } else if (strcmp(status, "NOK") == 0) {
+            if (strcmp(status, "NOK") == 0) {
                 sprintf(buffer, "user has no ongoing bids\n");
             } else if (strcmp(status, "NLG") == 0) {
                 sprintf(buffer, "user is not logged in\n");
             }
         } else if (strcmp(type_reply, "RLS") == 0) { // reply for list
-            if (strcmp(status, "OK") == 0) {
-                strncpy(buffer, list, sizeof(list) - 1);
-                free(list);
-            } else if (strcmp(status, "NOK") == 0) {
+            if (strcmp(status, "NOK") == 0) {
                 sprintf(buffer, "no auctions are currently active\n");
             }
         } else if (strcmp(type_reply, "RRC") == 0) { // reply for show_record
             if (strcmp(status, "OK") == 0) {
                 strncpy(buffer, list, sizeof(list) - 1);
-                free(list);
             } else if (strcmp(status, "NOK") == 0) {
                 sprintf(buffer, "the auction does not exist\n");
             } 
         }
+        free(list);
     }
 }
 

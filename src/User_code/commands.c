@@ -23,79 +23,91 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
             strcpy(user->password, password);
             user->logged = true;
         }
-    } else if (strcmp(cmd, "logout") == 0) {
-        sprintf(buffer, "LOU %s %s\n", user->UID, user->password);
-        user->logged = false;
-    } else if (strcmp(cmd, "unregister") == 0) {
-        sprintf(buffer, "UNR %s %s\n", user->UID, user->password);
-    } else if (strcmp(cmd, "myauctions") == 0 || strcmp(cmd, "ma") == 0) {
-        sprintf(buffer, "LMA %s\n", user->UID);
-    } else if (strcmp(cmd, "my bids") == 0 || strcmp(cmd, "mb") == 0) {
-        sprintf(buffer, "LMB %s\n", user->UID);
     } else if (strcmp(cmd, "list") == 0 || strcmp(cmd, "l") == 0) {
         sprintf(buffer, "LST\n");
     } else if (strcmp(cmd, "exit") == 0) {
         sprintf(buffer, "EXT\n");
     } else if (strcmp(cmd, "show_record") == 0 || strcmp(cmd, "sr") == 0) {
         sprintf(buffer, "SRC\n");
-    } 
-    // tcp requests    
-    else {
-        if (strcmp(cmd, "open") == 0) {
-            char name[MAX_NAME_DESC + 1];
-            char start_value[MAX_START_VAL + 1];
-            char timeactive[MAX_AUC_DURATION + 1];
-            char asset_fname[MAX_FILENAME];
-            if (sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
-                start_value, timeactive) != 4 ||
-                !is_open_valid(name, asset_fname, start_value, timeactive))
-                sprintf(buffer, "invalid data for open");
-            else {
-                sprintf(buffer, "OPA %s %s %s %s %s %s %s %s\n", user->UID, user->password, 
-                name, start_value, timeactive, asset_fname,
-                get_file_size(asset_fname), get_file_data(asset_fname));                
-            }
-        } else if (strcmp(cmd, "close") == 0) {
-            sprintf(buffer, "CLS %s %s\n", user->UID, user->password);
-        } else if (strcmp(cmd, "show_asset") == 0) {
-            sprintf(buffer, "SAS\n");
-        } else if (strcmp(cmd, "bid") == 0) {
-            sprintf(buffer, "BID %s %s\n", user->UID, user->password);
-        } else {
-            sprintf(buffer, "Invalid input");
-            return false;
+    }     
+
+    else if (user->logged == true) {
+        if (strcmp(cmd, "logout") == 0) {
+            sprintf(buffer, "LOU %s %s\n", user->UID, user->password);
+            user->logged = false;
+        } else if (strcmp(cmd, "unregister") == 0) {
+            sprintf(buffer, "UNR %s %s\n", user->UID, user->password);
+        } else if (strcmp(cmd, "myauctions") == 0 || strcmp(cmd, "ma") == 0) {
+            sprintf(buffer, "LMA %s\n", user->UID);
+        } else if (strcmp(cmd, "my bids") == 0 || strcmp(cmd, "mb") == 0) {
+            sprintf(buffer, "LMB %s\n", user->UID);
         }
-        *socket_type = SOCK_STREAM;
-    }  
+        // tcp requests    
+        else {
+            if (strcmp(cmd, "open") == 0) {
+                char name[MAX_NAME_DESC + 1];
+                char start_value[MAX_START_VAL + 1];
+                char timeactive[MAX_AUC_DURATION + 1];
+                char asset_fname[MAX_FILENAME];
+                if (sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
+                    start_value, timeactive) != 4 ||
+                    !is_open_valid(name, asset_fname, start_value, timeactive))
+                    sprintf(buffer, "invalid data for open");
+                else {
+                    long size = get_file_size(asset_fname);
+                    char *data = get_file_data(asset_fname, size);
+                    if (size > MAX_FILESIZE) {
+                        sprintf(buffer, "image too big");
+                        free(data);
+                        return false;
+                    }
+                    sprintf(buffer, "OPA %s %s %s %s %s %s %ld %s\n", user->UID, user->password, 
+                    name, start_value, timeactive, asset_fname, size, data); 
+                    free(data);               
+                }
+            } else if (strcmp(cmd, "close") == 0) {
+                sprintf(buffer, "CLS %s %s\n", user->UID, user->password);
+            } else if (strcmp(cmd, "show_asset") == 0) {
+                sprintf(buffer, "SAS\n");
+            } else if (strcmp(cmd, "bid") == 0) {
+                sprintf(buffer, "BID %s %s\n", user->UID, user->password);
+            } else {
+                sprintf(buffer, "Invalid input");
+                return false;
+            }
+            *socket_type = SOCK_STREAM;
+        }
+    }
+    else { // user not logged in
+        sprintf(buffer, "User not logged in");
+        return false;
+    } 
     return true;
 }
 
-char *get_file_size(char *filename) {
+long get_file_size(char *filename) {
     struct stat filestat;
        
     if (stat(filename, &filestat) == 0) {
-        return long_to_string(filestat.st_size);
+        return filestat.st_size;
     } else {
         perror("Error getting file information");
     }
-    return NULL; // only to compile
+    return 0; // only to compile
 }
 
-char* long_to_string(long num) {
-    int num_digits = snprintf(NULL, 0, "%ld", num);
-    char *str = (char *)malloc(num_digits + 1);
-    if (str == NULL) {
-        fprintf(stderr, "Memory allocation error\n");
+char *get_file_data(char *filename, long filesize) {
+    char *data = malloc(sizeof(filesize));
+
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) {
+        perror("Error opening file");
         exit(1);
     }
-    // Convert the long number to a string
-    snprintf(str, num_digits + 1, "%ld", num);
-    return str;
-}
+    fread(data, 1, filesize, file);
 
-char *get_file_data(char *filename) {
-    // TO DO
-    return filename; // only here so we can compile...
+    fclose(file);
+    return data; // only here so we can compile...
 }
 
 bool is_login_valid(char *UID, char *password) {

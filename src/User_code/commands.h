@@ -16,6 +16,7 @@
 #define MAX_START_VAL 6
 #define MAX_AUC_DURATION 5
 #define MAX_FILENAME 28 // 24 chars + .xxx
+#define MAX_FILESIZE 10000000
 
 #ifndef __cplusplus // To avoid conflict with C++ bool type
 typedef enum {
@@ -39,8 +40,7 @@ bool is_desc_name(char *name);
 bool is_start_val(char *start_value);
 bool is_timeactive(char *timeactive);
 bool is_filename(char *filename);
-char *get_file_size(char *filename);
-char* long_to_string(long num);
-char *get_file_data(char *filename);
+long get_file_size(char *filename);
+char *get_file_data(char *filename, long size);
 
 #endif

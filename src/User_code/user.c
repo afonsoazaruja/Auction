@@ -108,7 +108,6 @@ void analyze_reply_udp(int fd, char *buffer) {
         if (list != NULL) {
             // Use sscanf again to skip the first two words and copy the rest to the list
             sscanf(buffer, "%*s %*s %[^\n]", list);
-
             if (strcmp(type_reply, "RRC") != 0 && strcmp(status, "OK") == 0) {
                 char *token = strtok(list, " ");
                 buffer[0] = '\0';
@@ -128,7 +127,7 @@ void analyze_reply_udp(int fd, char *buffer) {
                 strcat(buffer, "\n");
             }
         }        
-        if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions
+        else if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions
             if (strcmp(status, "NOK") == 0) {
                 sprintf(buffer, "user has no ongoing auctions\n");
             } else if (strcmp(status, "NLG") == 0) {
@@ -138,7 +137,7 @@ void analyze_reply_udp(int fd, char *buffer) {
             if (strcmp(status, "NOK") == 0) {
                 sprintf(buffer, "user has no ongoing bids\n");
             } else if (strcmp(status, "NLG") == 0) {
-                sprintf(buffer, "user is not logged in\n");
+                sprintf(buffer, "user not logged in\n");
             }
         } else if (strcmp(type_reply, "RLS") == 0) { // reply for list
             if (strcmp(status, "NOK") == 0) {

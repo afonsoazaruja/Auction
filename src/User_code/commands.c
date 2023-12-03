@@ -49,18 +49,39 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
                 char start_value[MAX_START_VAL + 1];
                 char timeactive[MAX_AUC_DURATION + 1];
                 char asset_fname[MAX_FILENAME];
-                if (sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
-                    start_value, timeactive) != 4 ||
-                    !is_open_valid(name, asset_fname, start_value, timeactive))
+                char dir[100];
+                if (sscanf(buffer, "%*s %s %s %s %s", name, dir, start_value, timeactive) != 4) {
+                    sprintf(buffer, "invalid arguments for open");
+                    return false;
+                }
+                // extract filename from dir
+                int len = strlen(dir);
+                int a = len;
+                int b = 0;
+                for(; a > 0; a--) {
+                    if(dir[a] == '/')
+                        break;
+                }
+                for(; a < len-1; b++) {
+                    asset_fname[b] = dir[a+1];
+                    a++;
+                }
+                asset_fname[b] = '\0';
+                if(!is_open_valid(name, asset_fname, start_value, timeactive)) {
                     sprintf(buffer, "invalid data for open");
+                    return false;
+                }                
                 else {
-                    long size = get_file_size(asset_fname);
-                    char *data = get_file_data(asset_fname, size);
+                    puts(dir);
+                    puts(asset_fname);
+                    long size = get_file_size(dir);
+                    char *data = get_file_data(dir, size);
                     if (size > MAX_FILESIZE) {
-                        sprintf(buffer, "image too big");
+                        sprintf(buffer, "file too big");
                         free(data);
                         return false;
                     }
+                    puts(asset_fname);
                     sprintf(buffer, "OPA %s %s %s %s %s %s %ld %s\n", user->UID, user->password, 
                     name, start_value, timeactive, asset_fname, size, data); 
                     free(data);               
@@ -92,8 +113,8 @@ long get_file_size(char *filename) {
         return filestat.st_size;
     } else {
         perror("Error getting file information");
+        return 0;
     }
-    return 0; // only to compile
 }
 
 char *get_file_data(char *filename, long filesize) {
@@ -104,7 +125,7 @@ char *get_file_data(char *filename, long filesize) {
         perror("Error opening file");
         exit(1);
     }
-    fread(data, 1, filesize, file);
+    fread(data, 1, filesize, file); // SEG FAULT AQUI
 
     fclose(file);
     return data; // only here so we can compile...
@@ -114,63 +135,78 @@ bool is_login_valid(char *UID, char *password) {
     return (is_UID(UID) && is_password(password));
 }
 bool is_UID(char *uid) {
-    int length = strlen(uid);
-    if (length != SIZE_UID) return false;  
+    int len = strlen(uid);
+    if (len != SIZE_UID) return false;  
 
-    for (int i = 0; i < length; i++) 
+    for (int i = 0; i < len; i++) 
         if (!isdigit(uid[i])) return false;
     return true;
 }
 bool is_password(char *password) {  
-    int length = strlen(password);
-    if (length != SIZE_PASSWORD) return false;  
+    int len = strlen(password);
+    if (len != SIZE_PASSWORD) return false;  
 
-    for (int i = 0; i < length; i++) 
+    for (int i = 0; i < len; i++) 
         if (!isalnum(password[i])) return false;
     return true;
 }
 
 bool is_open_valid(char *name, char *asset_fname, char *start_value, char *timeactive) {
     return (is_desc_name(name) && is_start_val(start_value) &&
-     is_timeactive(timeactive) && is_filename(asset_fname));
+    is_timeactive(timeactive) && is_filename(asset_fname));
 }
 bool is_desc_name(char *name) {
-    int length = strlen(name);
-    if (length > MAX_NAME_DESC) return false;  
+    int len = strlen(name);
+    if (len > MAX_NAME_DESC) return false;  
 
-    for (int i = 0; i < length; i++) 
+    for (int i = 0; i < len; i++) 
         if (!isalnum(name[i])) return false;
     return true;
 }
 bool is_start_val(char *start_value) {
-    int length = strlen(start_value);
-    if (length > MAX_START_VAL) return false;  
+    int len = strlen(start_value);
+    if (len > MAX_START_VAL) return false;  
 
-    for (int i = 0; i < length; i++) 
+    for (int i = 0; i < len; i++) 
         if (!isdigit(start_value[i])) return false;
     return true;
 }
 bool is_timeactive(char *timeactive) {
-    int length = strlen(timeactive);
-    if (length > MAX_AUC_DURATION) return false;  
+    int len = strlen(timeactive);
+    if (len > MAX_AUC_DURATION) return false;  
 
-    for (int i = 0; i < length; i++) 
+    for (int i = 0; i < len; i++) 
         if (!isdigit(timeactive[i])) return false;
     return true;
 }
 bool is_filename(char *filename) {
-    int length = strlen(filename);
-    if (length > MAX_FILENAME) return false;  
+    char name[MAX_FILENAME+1];
+    int len = strlen(filename);
+    int a = len;
+    int b = 0;
+    for(; a > 0; a--) {
+        if(filename[a] == '/')
+            break;
+    }
+    for(; a < len-1; b++) {
+        name[b] = filename[a+1];
+        a++;
+    }
+    name[b] = '\0';
+    len = strlen(name);
+
+    if (len > MAX_FILENAME) return false;  
 
     // check for filename, excluding .xxx
-    for (int i = 0; i < length - 4; i++) 
-        if (isalnum(filename[i]) || filename[i] == '-' ||
-             filename[i] == '_' || filename[i] == '.')
-                continue;
-            return false;
+    for (int i = 0; i < len - 4; i++) {
+        printf("%s\n", &name[i]);
+        if (isalnum(name[i]) || name[i] == '-' || name[i] == '_' || name[i] == '.')
+            continue;
+        return false;
+    } 
     // check for .xxx
-    if (filename[length - 4] != '.' || !isalpha(filename[length - 3]) ||
-         !isalpha(filename[length - 2]) || !isalpha(filename[length - 1]))
+    if (name[len - 4] != '.' || !isalpha(name[len - 3]) ||
+         !isalpha(name[len - 2]) || !isalpha(name[len - 1]))
          return false;
     return true;
 }

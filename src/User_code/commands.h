@@ -9,6 +9,8 @@
 #include <bits/types/FILE.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <errno.h>
 
 #define SIZE_UID 6
 #define SIZE_PASSWORD 8

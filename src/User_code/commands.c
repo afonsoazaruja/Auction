@@ -47,7 +47,7 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
         }
     }
     else { 
-        sprintf(buffer, "User not logged in or invalid input");
+        sprintf(buffer, "user not logged in or invalid input");
         return false;
     } 
     return true;
@@ -67,9 +67,8 @@ bool handle_login(char *buffer, struct session *user) {
     }
     else {
         sprintf(buffer, "LIN %s %s\n", uid, password);
-        strcpy(user->UID, uid);
-        strcpy(user->password, password);
-        user->logged = true;
+            strcpy(user->UID, uid);
+            strcpy(user->password, password);
     }
     return true;
 }
@@ -84,7 +83,9 @@ bool handle_open(char *buffer, struct session *user) {
         start_value, timeactive);
     char *fname = get_file_name(asset_fname);
 
+    puts("OLA");
     if (!is_open_valid(name, fname, start_value, timeactive)) {
+        puts("ADEUS");
         sprintf(buffer, "invalid data for open");
     } else {
         long size = get_file_size(asset_fname);

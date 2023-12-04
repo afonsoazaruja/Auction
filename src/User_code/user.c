@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
     char port[6] = DEFAULT_PORT;
     char *asip = getIpAdress();
     char *buffer = (char*)malloc(BUFFER_SIZE + 1);
-    session user = {false, "NULL", "NULL"};
+    session user = {false, "", ""};
     
     // Update ip and/or port 
     if (argc > 1) {
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
             printf("ERR: %s\n", buffer);
         } else {
             if (strcmp(buffer, "EXT\n") == 0) break;
-            if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
+            if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer, &user);
             else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
         }
     }
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     free(asip);
 }  
 
-void send_request_udp(char *port, char *asip, char *buffer) {
+void send_request_udp(char *port, char *asip, char *buffer, struct session *user) {
     int fd, errcode;
     ssize_t n;
     socklen_t addrlen;
@@ -67,28 +67,31 @@ void send_request_udp(char *port, char *asip, char *buffer) {
     if (n == -1) exit(1);
     buffer[n] = '\0';
 
-    analyze_reply_udp(fd, buffer);
+    analyze_reply_udp(fd, buffer, user);
     write(1, buffer, strlen(buffer));
     freeaddrinfo(res);
     close(fd);
 }
 
-void analyze_reply_udp(int fd, char *buffer) {
+void analyze_reply_udp(int fd, char *buffer, struct session *user) {
     char type_reply[4];
     char status[4];
     sscanf(buffer, "%s %s", type_reply, status); 
 
     if (strcmp(type_reply, "RLI") == 0) { // reply for login
         if (strcmp(status, "OK") == 0) {
+            user->logged = true;
             sprintf(buffer, "successful login\n");
         } else if (strcmp(status, "NOK") == 0) {
             sprintf(buffer, "incorrect login attempt\n");
         } else if (strcmp(status, "REG") == 0) {
             sprintf(buffer, "new user registered\n");
+            user->logged = true;
         }
     } else if (strcmp(type_reply, "RLO") == 0) { // reply for logout
         if (strcmp(status, "OK") == 0) {
             sprintf(buffer, "successful logout\n");
+            user->logged = false;
         } else if (strcmp(status, "NOK") == 0) {
             sprintf(buffer, "user not logged in\n");
         } else if (strcmp(status, "UNR") == 0) {
@@ -97,6 +100,7 @@ void analyze_reply_udp(int fd, char *buffer) {
     } else if (strcmp(type_reply, "RUR") == 0) { // reply for unregister
         if (strcmp(status, "OK") == 0) {
             sprintf(buffer, "successful unregister\n");
+            user->logged = false;
         } else if (strcmp(status, "NOK") == 0) {
             sprintf(buffer, "incorrect unregister attempt\n");
         } else if (strcmp(status, "UNR") == 0) {

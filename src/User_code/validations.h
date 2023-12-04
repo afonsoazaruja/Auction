@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 
 #define SIZE_UID 6
 #define SIZE_PASSWORD 8

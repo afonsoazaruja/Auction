@@ -53,11 +53,12 @@ bool is_filename(char *fname) {
     if (length > MAX_FILENAME) return false;  
 
     // check for fname, excluding .xxx
-    for (int i = 0; i < length - 4; i++) 
+    for (int i = 0; i < length - 4; i++) {
         if (isalnum(fname[i]) || fname[i] == '-' ||
              fname[i] == '_' || fname[i] == '.')
                 continue;
             return false;
+    }
     // check for .xxx
     if (fname[length - 4] != '.' || !isalpha(fname[length - 3]) ||
          !isalpha(fname[length - 2]) || !isalpha(fname[length - 1]))

@@ -6,8 +6,6 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
     sscanf(buffer, "%s", cmd); // extract command
     *socket_type = SOCK_DGRAM; // assume its udp command
 
-    // puts(get_file_name("diretoria/outro/ola")); puts(get_file_name("ola"));
-
     // udp requests
     if (strcmp(cmd, "login") == 0) {
         return handle_login(buffer, user);
@@ -31,6 +29,7 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
         }
         // tcp requests    
         else {
+            *socket_type = SOCK_STREAM;
             if (strcmp(cmd, "open") == 0) {
                 return handle_open(buffer, user);
             } else if (strcmp(cmd, "close") == 0) {
@@ -43,7 +42,6 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
                 sprintf(buffer, "Invalid input");
                 return false;
             }
-            *socket_type = SOCK_STREAM;
         }
     }
     else { 
@@ -83,10 +81,9 @@ bool handle_open(char *buffer, struct session *user) {
         start_value, timeactive);
     char *fname = get_file_name(asset_fname);
 
-    puts("OLA");
     if (!is_open_valid(name, fname, start_value, timeactive)) {
-        puts("ADEUS");
         sprintf(buffer, "invalid data for open");
+        return false;
     } else {
         long size = get_file_size(asset_fname);
         char *data = get_file_data(asset_fname, size);
@@ -97,10 +94,11 @@ bool handle_open(char *buffer, struct session *user) {
             return false;
         }
         sprintf(buffer, "OPA %s %s %s %s %s %s %ld %s\n", user->UID, user->password, 
-        name, start_value, timeactive, fname, size, data); 
+        name, start_value, timeactive, fname, size, data);
         free(data);
+        free(fname);
+        printf("%s", buffer);
     }
-    free(fname);
     return true;               
 }
 
@@ -135,14 +133,17 @@ long get_file_size(char *fname) {
 }
 
 char *get_file_data(char *fname, long filesize) {
-    char *data = malloc(sizeof(filesize));
+    char *data = malloc(filesize);
     FILE *file = fopen(fname, "rb");
+    puts(fname);
 
     if (file == NULL) {
         perror("Error opening file");
         exit(1);
     }
-    fread(data, 1, filesize, file);
+    size_t bread = fread(data, 1, filesize, file);
+    printf("%ld\n", bread);
+    printf("%s\n", data);
     fclose(file);
     return data; 
 }

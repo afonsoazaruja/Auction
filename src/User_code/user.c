@@ -65,6 +65,7 @@ void send_request_udp(char *port, char *asip, char *buffer) {
 
     n = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addr, &addrlen);
     if (n == -1) exit(1);
+    buffer[n] = '\0';
 
     analyze_reply_udp(fd, buffer);
     write(1, buffer, strlen(buffer));
@@ -72,10 +73,9 @@ void send_request_udp(char *port, char *asip, char *buffer) {
     close(fd);
 }
 
-
 void analyze_reply_udp(int fd, char *buffer) {
-    char type_reply[5];
-    char status[5];
+    char type_reply[4];
+    char status[4];
     sscanf(buffer, "%s %s", type_reply, status); 
 
     if (strcmp(type_reply, "RLI") == 0) { // reply for login
@@ -104,30 +104,31 @@ void analyze_reply_udp(int fd, char *buffer) {
         }
     } 
     else { // cases with list
-        char *list = (char *)malloc(strlen(buffer));       
-        if (list != NULL) {
-            // Use sscanf again to skip the first two words and copy the rest to the list
-            sscanf(buffer, "%*s %*s %[^\n]", list);
-            if (strcmp(type_reply, "RRC") != 0 && strcmp(status, "OK") == 0) {
-                char *token = strtok(list, " ");
-                buffer[0] = '\0';
-                char tmp[4];
-                bool first = true;
+        char *list = (char *)malloc(BUFFER_SIZE);       
+        if (list == NULL) exit(1);
 
-                while (token != NULL) {
-                    strcpy(tmp, token);
-                    token = strtok(NULL, " ");
-                    if (token[0] == '1') {
-                        if (!first) strcat(buffer, " ");
-                        strcat(buffer, tmp);
-                        first = false;
-                    }
-                    token = strtok(NULL, " ");
+        // Use sscanf again to skip the first two words and copy the rest to the list
+        sscanf(buffer, "%*s %*s %[^\n]", list);
+        if (strcmp(status, "OK") == 0 && strcmp(type_reply, "RRC") != 0) {
+            char *token = strtok(list, " ");
+            buffer[0] = '\0';
+            char tmp[4];
+            bool first = true;
+
+            while (token != NULL) {
+                strcpy(tmp, token);
+                token = strtok(NULL, " ");
+                if (token[0] == '1') {
+                    if (!first) strcat(buffer, " ");
+                    strcat(buffer, tmp);
+                    first = false;
                 }
-                strcat(buffer, "\n");
+                token = strtok(NULL, " ");
             }
-        }        
-        else if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions
+            if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
+            else strcat(buffer, "\n");
+        }  
+        if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions
             if (strcmp(status, "NOK") == 0) {
                 sprintf(buffer, "user has no ongoing auctions\n");
             } else if (strcmp(status, "NLG") == 0) {
@@ -141,7 +142,7 @@ void analyze_reply_udp(int fd, char *buffer) {
             }
         } else if (strcmp(type_reply, "RLS") == 0) { // reply for list
             if (strcmp(status, "NOK") == 0) {
-                sprintf(buffer, "no auctions are currently active\n");
+                sprintf(buffer, "no auction was yet started\n");
             }
         } else if (strcmp(type_reply, "RRC") == 0) { // reply for show_record
             if (strcmp(status, "OK") == 0) {

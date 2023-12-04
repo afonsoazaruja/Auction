@@ -9,10 +9,8 @@
 #include "commands.h"
 #include <fcntl.h>
 
-
 #define DEFAULT_PORT "58023" // 58000 + 23
 #define BUFFER_SIZE 7000
-
 
 int main(int argc, char **argv);
 void send_request_udp(char *port, char *asip, char *buffer);

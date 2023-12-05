@@ -1,11 +1,13 @@
 #include "user.h"
+#include "replies.h"
+#include "getIp.h"
 
 session user = {false, "", ""};
 
 int main(int argc, char **argv) {
     int socket_type;
     char port[6] = DEFAULT_PORT;
-    char *asip = getIpAdress();
+    char *asip = getIpAddress();
     char *buffer = (char*)malloc(BUFFER_SIZE + 1);
     
     // Update ip and/or port 
@@ -75,13 +77,6 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     close(fd);
 }
 
-void analyze_reply_tcp(int fd, char *buffer) {
-    char type_reply[4];
-    char status[4];
-    sscanf(buffer, "%s %s", type_reply, status);
-    puts(buffer);    
-}
-
 void send_request_udp(char *port, char *asip, char *buffer) {
     int fd, errcode;
     ssize_t n;
@@ -114,96 +109,40 @@ void send_request_udp(char *port, char *asip, char *buffer) {
     close(fd);
 }
 
-void analyze_reply_udp(char *buffer) {
-    char type_reply[4];
-    char status[4];
-    sscanf(buffer, "%s %s", type_reply, status); 
 
-    if (strcmp(type_reply, "RLI") == 0) { // reply for login
-        if (strcmp(status, "OK") == 0) {
-            user.logged = true;
-            sprintf(buffer, "successful login\n");
-        } else if (strcmp(status, "NOK") == 0) {
-            sprintf(buffer, "incorrect login attempt\n");
-        } else if (strcmp(status, "REG") == 0) {
-            sprintf(buffer, "new user registered\n");
-            user.logged = true;
-        }
-    } else if (strcmp(type_reply, "RLO") == 0) { // reply for logout
-        if (strcmp(status, "OK") == 0) {
-            sprintf(buffer, "successful logout\n");
-            user.logged = false;
-        } else if (strcmp(status, "NOK") == 0) {
-            sprintf(buffer, "user not logged in\n");
-        } else if (strcmp(status, "UNR") == 0) {
-            sprintf(buffer, "unknown user\n");
-        }
-    } else if (strcmp(type_reply, "RUR") == 0) { // reply for unregister
-        if (strcmp(status, "OK") == 0) {
-            sprintf(buffer, "successful unregister\n");
-            user.logged = false;
-        } else if (strcmp(status, "NOK") == 0) {
-            sprintf(buffer, "incorrect unregister attempt\n");
-        } else if (strcmp(status, "UNR") == 0) {
-            sprintf(buffer, "unknown user\n");
-        }
-    } 
-    else { // cases with list
-        char *list = (char *)malloc(BUFFER_SIZE);       
-        if (list == NULL) exit(1);
-        // Use sscanf to skip the first two words and copy the rest to the list
-        sscanf(buffer, "%*s %*s %[^\n]", list);
+// char* getIpAddress() {
+//     char hostname[128];
+//     extern int errno;
+//     struct addrinfo hints,*res,*p;
+//     int errcode;
+//     struct in_addr *addr;
+//     char* ipAddress = malloc(INET_ADDRSTRLEN);  
 
-        if (strcmp(status, "OK") == 0 && strcmp(type_reply, "RRC") != 0) {
-            free(buffer);
-            buffer = get_ongoing_auctions(list);
-            if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
-            else strcat(buffer, "\n");
-        }  
-        if (strcmp(type_reply, "RMA") == 0) { // reply for myauctions
-            if (strcmp(status, "NOK") == 0) {
-                sprintf(buffer, "user has no ongoing auctions\n");
-            } else if (strcmp(status, "NLG") == 0) {
-                sprintf(buffer, "user not logged in\n");
-            }
-        } else if (strcmp(type_reply, "RMB") == 0) { // reply for mybids
-            if (strcmp(status, "NOK") == 0) {
-                sprintf(buffer, "user has no ongoing bids\n");
-            } else if (strcmp(status, "NLG") == 0) {
-                sprintf(buffer, "user not logged in\n");
-            }
-        } else if (strcmp(type_reply, "RLS") == 0) { // reply for list
-            if (strcmp(status, "NOK") == 0) {
-                sprintf(buffer, "no auction was yet started\n");
-            }
-        } else if (strcmp(type_reply, "RRC") == 0) { // reply for show_record
-            if (strcmp(status, "OK") == 0) {
-                strncpy(buffer, list, sizeof(list) - 1);
-            } else if (strcmp(status, "NOK") == 0) {
-                sprintf(buffer, "the auction does not exist\n");
-            } 
-        }
-        free(list);
-    }
-}
+//     if(gethostname(hostname,128)==-1) {
+//         fprintf(stderr,"error: %s\n",strerror(errno));
+//         exit(EXIT_FAILURE); 
+//     }
+//     memset(&hints,0,sizeof hints);
+//     hints.ai_family=AF_INET;
+//     hints.ai_socktype=SOCK_STREAM;
+//     hints.ai_flags=AI_CANONNAME;
 
-char *get_ongoing_auctions(char *list) {
-    char *token = strtok(list, " ");
-    char *buffer = malloc(BUFFER_SIZE);
-    char tmp[4];
-    bool first = true;
-    buffer[0] = '\0';
+//     if ((errcode=getaddrinfo(hostname,NULL,&hints,&res))!=0) {
+//         fprintf(stderr,"error: getaddrinfo: %s\n",gai_strerror(errcode));
+//         exit(EXIT_FAILURE);
+//     } else {
+//         for(p=res;p!=NULL;p=p->ai_next){
+//             addr=&((struct sockaddr_in *)p->ai_addr)->sin_addr;
+//             inet_ntop(p->ai_family, addr, ipAddress, INET_ADDRSTRLEN);
+//         }
+//         freeaddrinfo(res);
+//     }
+//     return ipAddress;
+// }
 
-    while (token != NULL) {
-        strcpy(tmp, token);
-        token = strtok(NULL, " ");
-        if (token[0] == '1') {
-            if (!first) strcat(buffer, " ");
-            strcat(buffer, tmp);
-            first = false;
-        }
-        token = strtok(NULL, " ");
-    }
-    return buffer;
-}
+
+
+
+
+
 

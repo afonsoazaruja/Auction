@@ -10,6 +10,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-char* getIpAdress();
+char* getIpAddress();
 
 #endif

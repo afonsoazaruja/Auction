@@ -1,6 +1,6 @@
 #include "getIp.h"
 
-char* getIpAdress() {
+char* getIpAddress() {
     char hostname[128];
     extern int errno;
     struct addrinfo hints,*res,*p;
@@ -29,4 +29,3 @@ char* getIpAdress() {
     }
     return ipAddress;
 }
-

@@ -13,7 +13,7 @@
 #define MAX_AUC_DURATION 5
 #define MAX_FILENAME 28 // 24 chars + .xxx
 #define MIN_FILENAME 5 // 1 char + .xxx
-#define MAX_FILESIZE 10000000
+#define MAX_FILESIZE 10 * 1024 * 1024
 
 bool is_login_valid(char *UID, char *password);
 bool is_UID(char *uid);

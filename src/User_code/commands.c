@@ -6,7 +6,6 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
     char cmd[10];
     sscanf(buffer, "%s", cmd); // extract command
     *socket_type = SOCK_DGRAM; // assume its udp command
-
     // udp requests
     if (strcmp(cmd, "login") == 0) {
         return handle_login(buffer, user);
@@ -77,35 +76,27 @@ bool handle_open(char *buffer, struct session *user) {
     char timeactive[MAX_AUC_DURATION + 1];
     char asset_fname[MAX_FILENAME];
 
-    puts(buffer);
     if (sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
         start_value, timeactive) != 4) {
             sprintf(buffer, "invalid data for open");
             return false;
     }
+
     char *fname = get_file_name(asset_fname);
-    printf("%s %s %s %s\n", name, fname, start_value, timeactive);
 
     if (!is_open_valid(name, fname, start_value, timeactive)) {
+        free(fname);
         sprintf(buffer, "invalid data for open");
         return false;
     } else {
-        puts("got here");
         long size = get_file_size(asset_fname);
-        printf("%lu\n", size);
-
-        char *data = get_file_data(asset_fname, size);
         if (size > MAX_FILESIZE) {
             sprintf(buffer, "image too big");
-            free(data);
             free(fname);
             return false;
         }
-        sprintf(buffer, "OPA %s %s %s %s %s %s %ld %s\n", user->UID, user->password, 
-        name, start_value, timeactive, fname, size, data);
-        free(data);
+        sprintf(buffer, "OPA %s %s %s %s %ld", name, start_value, timeactive, asset_fname, size);
         free(fname);
-        //printf("%s", buffer);
     }
     return true;               
 }
@@ -113,7 +104,7 @@ bool handle_open(char *buffer, struct session *user) {
 char* get_file_name(char *dir) {
     int len = strlen(dir);
     int a = len, b = 0;
-    char *fname = malloc(strlen(dir));
+    char *fname = malloc((len + 1)*sizeof(char));
 
     for(; a > 0; a--) {
         if(dir[a] == '/') {
@@ -157,10 +148,6 @@ char *get_file_data(char *fname, long filesize) {
     }
     data[filesize] = '\0';
 
-    printf("%ld\n", bread);
     fclose(file);
     return data;
 }
-
-
-

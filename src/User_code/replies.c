@@ -19,12 +19,11 @@ void analyze_reply_udp(char *buffer) {
         sscanf(buffer, "%*s %*s %[^\n]", list);
 
         if (strcmp(status, "OK") == 0 && strcmp(type_reply, "RRC") != 0) {
-            free(buffer);
-            buffer = get_ongoing_auctions(list);
-            if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
-            else strcat(buffer, "\n");
+            get_ongoing_auctions(list, buffer, type_reply);
+            //if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
+            //else strcat(buffer, "\n");
         }  
-        if (strcmp(type_reply, "RMA") == 0) { 
+        else if (strcmp(type_reply, "RMA") == 0) { 
             reply_myauctions(status, buffer);
         } else if (strcmp(type_reply, "RMB") == 0) { 
             reply_mybids(status, buffer);
@@ -37,24 +36,36 @@ void analyze_reply_udp(char *buffer) {
     }
 }
 
-char *get_ongoing_auctions(char *list) {
+void get_ongoing_auctions(char *list, char *buffer, char *type) {
     char *token = strtok(list, " ");
-    char *buffer = malloc(BUFFER_SIZE);
     char tmp[4];
-    bool first = true;
     buffer[0] = '\0';
 
-    while (token != NULL) {
-        strcpy(tmp, token);
-        token = strtok(NULL, " ");
-        if (token[0] == '1') {
-            if (!first) strcat(buffer, " ");
-            strcat(buffer, tmp);
-            first = false;
+    if (strcmp(type, "RLS") == 0) {
+        while (token != NULL) {
+            strcpy(tmp, token);
+            token = strtok(NULL, " ");
+            if (token[0] == '1') {
+                strcat(buffer, "AID: ");
+                strcat(buffer, tmp);
+                strcat(buffer, "\n");
+            }
+            token = strtok(NULL, " ");
         }
-        token = strtok(NULL, " ");
+    }    
+    else if (strcmp(type, "RMA") == 0) {
+        while (token != NULL) {
+            strcpy(tmp, token);
+            token = strtok(NULL, " ");
+            strcat(buffer, "AID: ");
+            strcat(buffer, tmp);
+            if (token[0] == '1')
+                strcat(buffer, " ACTIVE\n");
+            else 
+                strcat(buffer, " INACTIVE\n");
+            token = strtok(NULL, " ");
+        }
     }
-    return buffer;
 }
 
 void reply_login(char *status, char *buffer) {

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -pedantic #-Werror
+CFLAGS = -Wall -pedantic -g#-Werror
 
 # Source files (all .c files in the current directory)
 SRCS = $(wildcard *.c)

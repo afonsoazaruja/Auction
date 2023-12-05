@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdbool.h>
+#include <sys/sendfile.h>
+#include <fcntl.h>
 
 typedef struct session {
     bool logged;

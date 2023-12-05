@@ -6,7 +6,7 @@
 extern session user;
 
 void analyze_reply_udp(char *buffer);
-char *get_ongoing_auctions(char *list);
+void get_ongoing_auctions(char *list, char *buffer, char *type);
 void reply_login(char *status, char *buffer);
 void reply_logout(char *status, char *buffer);
 void reply_unregister(char *status, char *buffer);

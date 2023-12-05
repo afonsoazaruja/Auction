@@ -4,6 +4,7 @@
 bool is_login_valid(char *UID, char *password) {
     return (is_UID(UID) && is_password(password));
 }
+
 bool is_UID(char *uid) {
     int length = strlen(uid);
     if (length != SIZE_UID) return false;  
@@ -12,6 +13,7 @@ bool is_UID(char *uid) {
         if (!isdigit(uid[i])) return false;
     return true;
 }
+
 bool is_password(char *password) {  
     int length = strlen(password);
     if (length != SIZE_PASSWORD) return false;  
@@ -25,6 +27,7 @@ bool is_open_valid(char *name, char *fname, char *start_value, char *timeactive)
     return (is_desc_name(name) && is_start_val(start_value) &&
      is_timeactive(timeactive) && is_filename(fname));
 }
+
 bool is_desc_name(char *name) {
     int length = strlen(name);
     if (length > MAX_NAME_DESC) return false;  
@@ -33,6 +36,7 @@ bool is_desc_name(char *name) {
         if (!isalnum(name[i])) return false;
     return true;
 }
+
 bool is_start_val(char *start_value) {
     int length = strlen(start_value);
     if (length > MAX_START_VAL) return false;  
@@ -41,6 +45,7 @@ bool is_start_val(char *start_value) {
         if (!isdigit(start_value[i])) return false;
     return true;
 }
+
 bool is_timeactive(char *timeactive) {
     int length = strlen(timeactive);
     if (length > MAX_AUC_DURATION) return false;  
@@ -49,6 +54,7 @@ bool is_timeactive(char *timeactive) {
         if (!isdigit(timeactive[i])) return false;
     return true;
 }
+
 bool is_filename(char *fname) {
     int length = strlen(fname);
     if ((length > MAX_FILENAME) || length < MIN_FILENAME) return false;  

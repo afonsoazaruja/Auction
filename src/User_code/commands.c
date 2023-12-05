@@ -1,3 +1,4 @@
+#include "user.h"
 #include "commands.h"
 #include "validations.h"
 
@@ -43,8 +44,7 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
                 return false;
             }
         }
-    }
-    else { 
+    } else { 
         sprintf(buffer, "user not logged in or invalid input");
         return false;
     } 
@@ -77,15 +77,23 @@ bool handle_open(char *buffer, struct session *user) {
     char timeactive[MAX_AUC_DURATION + 1];
     char asset_fname[MAX_FILENAME];
 
-    sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
-        start_value, timeactive);
+    puts(buffer);
+    if (sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
+        start_value, timeactive) != 4) {
+            sprintf(buffer, "invalid data for open");
+            return false;
+    }
     char *fname = get_file_name(asset_fname);
+    printf("%s %s %s %s\n", name, fname, start_value, timeactive);
 
     if (!is_open_valid(name, fname, start_value, timeactive)) {
         sprintf(buffer, "invalid data for open");
         return false;
     } else {
+        puts("got here");
         long size = get_file_size(asset_fname);
+        printf("%lu\n", size);
+
         char *data = get_file_data(asset_fname, size);
         if (size > MAX_FILESIZE) {
             sprintf(buffer, "image too big");
@@ -97,7 +105,7 @@ bool handle_open(char *buffer, struct session *user) {
         name, start_value, timeactive, fname, size, data);
         free(data);
         free(fname);
-        printf("%s", buffer);
+        //printf("%s", buffer);
     }
     return true;               
 }
@@ -112,8 +120,7 @@ char* get_file_name(char *dir) {
             a++;
             break;
         }
-    }
-    for(; a < len; b++) {
+    } for(; a < len; b++) {
         fname[b] = dir[a];
         a++;
     }
@@ -133,19 +140,26 @@ long get_file_size(char *fname) {
 }
 
 char *get_file_data(char *fname, long filesize) {
-    char *data = malloc(filesize);
+    char *data = malloc(filesize + 1);
+    if (data == NULL) {
+        perror("Error allocating memory");
+        exit(1);
+    }
     FILE *file = fopen(fname, "rb");
-    puts(fname);
-
     if (file == NULL) {
         perror("Error opening file");
         exit(1);
     }
     size_t bread = fread(data, 1, filesize, file);
+    if (bread != (size_t)filesize) {
+        perror("Error reading file");
+        exit(1);
+    }
+    data[filesize] = '\0';
+
     printf("%ld\n", bread);
-    printf("%s\n", data);
     fclose(file);
-    return data; 
+    return data;
 }
 
 

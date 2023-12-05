@@ -1,3 +1,4 @@
+
 #include "validations.h"
 
 bool is_login_valid(char *UID, char *password) {
@@ -50,7 +51,7 @@ bool is_timeactive(char *timeactive) {
 }
 bool is_filename(char *fname) {
     int length = strlen(fname);
-    if (length > MAX_FILENAME) return false;  
+    if ((length > MAX_FILENAME) || length < MIN_FILENAME) return false;  
 
     // check for fname, excluding .xxx
     for (int i = 0; i < length - 4; i++) {

@@ -14,9 +14,10 @@
 
 int main(int argc, char **argv);
 void send_request_udp(char *port, char *asip, char *buffer);
-void analyze_reply_udp(char *buffer);
 void send_request_tcp(char *port, char *asip, char *buffer);
 void analyze_reply_tcp(int fd, char *buffer);
+void analyze_reply_udp(char *buffer);
+char *get_ongoing_auctions(char *list);
 
 
 #endif

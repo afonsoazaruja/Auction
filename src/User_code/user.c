@@ -40,7 +40,47 @@ int main(int argc, char **argv) {
     }
     free(buffer);
     free(asip);
-}  
+}
+
+void send_request_tcp(char *port, char *asip, char *buffer) {
+    int fd, errcode;
+    ssize_t n;
+    // socklen_t addrlen;
+    struct addrinfo hints, *res;
+    //struct sockaddr_in addr;
+
+    fd=socket(AF_INET,SOCK_STREAM,0); // TCP socket
+    if (fd==-1) exit(1); //error
+
+    memset(&hints,0,sizeof hints);
+    hints.ai_family=AF_INET; //IPv4
+    hints.ai_socktype=SOCK_STREAM; //TCP socket
+
+    errcode=getaddrinfo(asip,port,&hints,&res);
+    if(errcode!=0)/*error*/exit(1);
+
+    n=connect(fd,res->ai_addr,res->ai_addrlen);
+    if(n==-1)/*error*/exit(1);
+
+    n=write(fd, buffer, strlen(buffer));
+    if(n==-1)/*error*/exit(1);
+
+    n=read(fd,buffer, BUFFER_SIZE);
+    if(n==-1)/*error*/exit(1);
+    buffer[n] = '\0';
+    
+    write(1,buffer,n);
+
+    freeaddrinfo(res);
+    close(fd);
+}
+
+void analyze_reply_tcp(int fd, char *buffer) {
+    char type_reply[4];
+    char status[4];
+    sscanf(buffer, "%s %s", type_reply, status);
+    puts(buffer);    
+}
 
 void send_request_udp(char *port, char *asip, char *buffer) {
     int fd, errcode;
@@ -111,25 +151,12 @@ void analyze_reply_udp(char *buffer) {
     else { // cases with list
         char *list = (char *)malloc(BUFFER_SIZE);       
         if (list == NULL) exit(1);
-
-        // Use sscanf again to skip the first two words and copy the rest to the list
+        // Use sscanf to skip the first two words and copy the rest to the list
         sscanf(buffer, "%*s %*s %[^\n]", list);
-        if (strcmp(status, "OK") == 0 && strcmp(type_reply, "RRC") != 0) {
-            char *token = strtok(list, " ");
-            buffer[0] = '\0';
-            char tmp[4];
-            bool first = true;
 
-            while (token != NULL) {
-                strcpy(tmp, token);
-                token = strtok(NULL, " ");
-                if (token[0] == '1') {
-                    if (!first) strcat(buffer, " ");
-                    strcat(buffer, tmp);
-                    first = false;
-                }
-                token = strtok(NULL, " ");
-            }
+        if (strcmp(status, "OK") == 0 && strcmp(type_reply, "RRC") != 0) {
+            free(buffer);
+            buffer = get_ongoing_auctions(list);
             if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
             else strcat(buffer, "\n");
         }  
@@ -160,42 +187,23 @@ void analyze_reply_udp(char *buffer) {
     }
 }
 
-void send_request_tcp(char *port, char *asip, char *buffer) {
-    int fd, errcode;
-    ssize_t n;
-    struct addrinfo hints, *res;
-    fd=socket(AF_INET,SOCK_STREAM,0); // TCP socket
-    if (fd==-1) exit(1); //error
+char *get_ongoing_auctions(char *list) {
+    char *token = strtok(list, " ");
+    char *buffer = malloc(BUFFER_SIZE);
+    char tmp[4];
+    bool first = true;
+    buffer[0] = '\0';
 
-    memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET; //IPv4
-    hints.ai_socktype=SOCK_STREAM; //TCP socket
-    
-    printf("%s", buffer);
-
-    errcode=getaddrinfo(asip,port,&hints,&res);
-    if(errcode!=0)/*error*/exit(1);
-    puts("OLA");
-    n=connect(fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1)/*error*/exit(1);
-
-    n=write(fd, buffer, strlen(buffer));
-    if(n==-1)/*error*/exit(1);
-
-    n=read(fd,buffer,128);
-    if(n==-1)/*error*/exit(1);
-    buffer[n] = '\0';
-    
-    write(1,buffer,n);
-
-    freeaddrinfo(res);
-    close(fd);
+    while (token != NULL) {
+        strcpy(tmp, token);
+        token = strtok(NULL, " ");
+        if (token[0] == '1') {
+            if (!first) strcat(buffer, " ");
+            strcat(buffer, tmp);
+            first = false;
+        }
+        token = strtok(NULL, " ");
+    }
+    return buffer;
 }
 
-void analyze_reply_tcp(int fd, char *buffer) {
-    char type_reply[4];
-    char status[4];
-    sscanf(buffer, "%s %s", type_reply, status);
-    puts(buffer);    
-    return;
-}

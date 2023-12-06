@@ -6,6 +6,8 @@ void analyze_reply_udp(char *buffer) {
     char status[4];
     sscanf(buffer, "%s %s", type_reply, status); 
 
+    // printf("%s", buffer);
+
     if (strcmp(type_reply, "RLI") == 0) {
         reply_login(status, buffer);
     } else if (strcmp(type_reply, "RLO") == 0) {
@@ -42,6 +44,7 @@ void get_ongoing_auctions(char *list, char *buffer, char *type) {
     buffer[0] = '\0';
 
     if (strcmp(type, "RLS") == 0) {
+        strcat(buffer, "ACTIVE AUCTIONS:\n");
         while (token != NULL) {
             strcpy(tmp, token);
             token = strtok(NULL, " ");
@@ -53,7 +56,7 @@ void get_ongoing_auctions(char *list, char *buffer, char *type) {
             token = strtok(NULL, " ");
         }
     }    
-    else if (strcmp(type, "RMA") == 0) {
+    else if ((strcmp(type, "RMA") == 0) || (strcmp(type, "RMB") == 0)) {
         while (token != NULL) {
             strcpy(tmp, token);
             token = strtok(NULL, " ");
@@ -126,31 +129,51 @@ void reply_list(char *status, char *buffer) {
 
 void reply_show_record(char *status, char *buffer, const char *list) {
     if (strcmp(status, "OK") == 0) {
+        
         strncpy(buffer, list, strlen(list));
     } else if (strcmp(status, "NOK") == 0) {
         sprintf(buffer, "the auction does not exist\n");
     }
 }
 
-void analyze_reply_tcp(char *buffer) {
-    char type_reply[4];
-    char status[4];
-    sscanf(buffer, "%s %s", type_reply, status);
+void analyze_reply_tcp(char *buffer, int fd) {
+    char type_reply[4] = "";
+    char status[4] = "";
+
+    extract(buffer, type_reply, fd);    // type_reply
+    extract(buffer, status, fd);        // status 
+
+    // puts(type_reply);
+    // puts(status);
 
     if (strcmp(type_reply, "ROA") == 0) { 
-       reply_open(status, buffer);
+       reply_open(status, buffer, fd);
     } else if (strcmp(type_reply, "RCL") == 0) { 
         reply_close(status, buffer);
     } else if (strcmp(type_reply, "RSA") == 0) { 
-        reply_show_asset(status, buffer);
+        reply_show_asset(status, buffer, fd);
     } else if (strcmp(type_reply, "RBD") == 0) { 
         reply_bid(status, buffer);
     }
 }   
 
-void reply_open( char *status, char *buffer) {
-    // TO DO
-    puts(buffer);
+void reply_open(char *status, char *buffer, int fd) {
+    char aid[SIZE_AID+1] = "";
+    if (strcmp(status, "OK") == 0) {
+        extract(buffer, aid, fd); // AID
+        // sscanf(buffer, "%*s %*s %s", aid);
+        sprintf(buffer, "auction successfully created AID %s\n", aid);
+    } else if (strcmp(status, "NOK") == 0) {
+        sprintf(buffer, "auction could not be started\n");
+    } else if (strcmp(status, "NLG") == 0) {
+        sprintf(buffer, "user not logged in\n");
+    } else if (strcmp(status, "EAU") == 0) {
+        sprintf(buffer, "auction AID does not exist\n");
+    } else if (strcmp(status, "EOW") == 0) {
+        sprintf(buffer, "auction is not owned by user UID\n");
+    } else if (strcmp(status, "END") == 0) {
+        sprintf(buffer, "auction time already ended\n");
+    }
 }
 
 void reply_close(char *status, char *buffer) {
@@ -169,26 +192,45 @@ void reply_close(char *status, char *buffer) {
     }
 }
 
-void reply_show_asset(char *status, char *buffer) {
+void reply_show_asset(char *status, char *buffer, int fd) {
     if (strcmp(status, "OK") == 0) {
-        char fname[MAX_FILENAME + 1];
-        long fsize = 0;
-        sscanf(buffer, "%*s %s %ld", fname, &fsize);
+        ssize_t n = 0;
+        char fname[12 + MAX_FILENAME + 1] = "";
+        char fsize[8 + 1] = ""; // 10*10⁶ (8 digitos)
+        long size = 0;
+        memset(buffer, 0, BUFFER_SIZE);
 
-        char fdata[fsize + 1];
-        sscanf(buffer, "%*s %*s %*s %s", fdata);
+        extract(buffer, fname, fd);
+        extract(buffer, fsize, fd);
+        
+        char *endptr = "";
+        size = strtol(fsize, &endptr, 10);
 
-        FILE *file = fopen(fname, "w");
+        char *data = malloc(size);
+        FILE *file = fopen(fname, "wb");
         if (file == NULL) {
             perror("Error opening file");
-            exit(1);
-        } else {
-            fprintf(file, "%s", fdata);
-            fclose(file);
-            sprintf(buffer, "%s %lu", fname, fsize);
+            exit(EXIT_FAILURE);
         }
+
+        do { // read bytes of file and write
+            n=read(fd, data, size);
+            if(n==-1)/*error*/exit(1);
+            size_t bytes_written = fwrite(data, 1, n, file);
+            if (bytes_written != n) {
+                perror("Error writing to file");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+            size -= n;
+        }while(size != 0);
+
+        sprintf(buffer, "asset transfer: success\n");
+
+        fclose(file);
+        free(data);
     } else if (strcmp(status, "NOK") == 0) {
-        sprintf(buffer, "no file to be sent or other problems\n");
+        sprintf(buffer, "asset transfer: failure\n");
     }
 }
 
@@ -204,4 +246,17 @@ void reply_bid(char *status, char *buffer) {
     } else if (strcmp(status, "ILG") == 0) {
         sprintf(buffer, "you cannot make a bid in an auction hosted by yourself\n");
     }
+}
+
+void extract(char *src, char *dst, int fd) {
+    ssize_t n = 0;
+    memset(src, 0, BUFFER_SIZE);
+    while(true) {
+        n=read(fd, src, 1);
+        if(n==-1)/*error*/exit(EXIT_FAILURE);
+        if (src[0] == ' ' || src[0] == '\n') break;
+        src[n] = '\0';
+        strcat(dst, src);
+    }
+    // printf("Extraction: %s\n", dst);
 }

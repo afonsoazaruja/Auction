@@ -5,6 +5,15 @@ bool is_login_valid(char *UID, char *password) {
     return (is_UID(UID) && is_password(password));
 }
 
+bool is_AID(char *aid) {
+    int length = strlen(aid);
+    if (length != SIZE_AID) return false;
+
+    for (int i = 0; i < length; i++) 
+        if (!isdigit(aid[i])) return false;
+    return true;
+}
+
 bool is_UID(char *uid) {
     int length = strlen(uid);
     if (length != SIZE_UID) return false;  
@@ -20,6 +29,11 @@ bool is_password(char *password) {
 
     for (int i = 0; i < length; i++) 
         if (!isalnum(password[i])) return false;
+    return true;
+}
+
+bool is_bid(int value) {
+    if (value > MAX_BID) return false;
     return true;
 }
 

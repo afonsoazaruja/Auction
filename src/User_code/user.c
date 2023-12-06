@@ -1,6 +1,5 @@
 #include "user.h"
 #include "replies.h"
-//#include "getIp.h"
 
 session user = {false, "", ""};
 
@@ -9,7 +8,6 @@ int main(int argc, char **argv) {
     char port[6] = DEFAULT_PORT;
     char *asip = getIpAddress();
     char buffer[BUFFER_SIZE + 1];
-    //char *buffer = (char*)malloc(BUFFER_SIZE + 1);
     
     // Update ip and/or port 
     if (argc > 1) {
@@ -33,15 +31,14 @@ int main(int argc, char **argv) {
     }
     while (true) {
         memset(buffer, 0, BUFFER_SIZE);
+        write(1, "-> ", 3);
         fgets(buffer, BUFFER_SIZE, stdin);
         if (!is_input_valid(buffer, &socket_type, &user)) {
             printf("ERR: %s\n", buffer);
         } else {
             if (strcmp(buffer, "EXT\n") == 0) break;
-            if (socket_type == SOCK_DGRAM)
-                send_request_udp(port, asip, buffer);
-            else if (socket_type == SOCK_STREAM)
-                send_request_tcp(port, asip, buffer);
+            if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
+            else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
         }
     }
     free(asip);
@@ -69,50 +66,16 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     if(n==-1)/*error*/exit(1);
 
     sscanf(buffer, "%s", cmd);
-    if (strcmp(cmd, "OPA") == 0) {
-        char name[MAX_NAME_DESC + 1];
-        char start_value[MAX_START_VAL + 1];
-        char timeactive[MAX_AUC_DURATION + 1];
-        char asset_fname[MAX_FILENAME];
-        long size = 0;
-
-        sscanf(buffer, "%*s %s %s %s %s %ld", name, start_value, timeactive, asset_fname, &size);
-
-        int asset_fd = open(asset_fname, O_RDONLY);
-        if (asset_fd == -1) {
-            perror("Error opening file");
-            exit(1);
-        }
-        char *fname = get_file_name(asset_fname);
-        
-        sprintf(buffer, "OPA %s %s %s %s %s %s %ld ", user.UID, user.password, name, start_value, timeactive, fname, size);    
-        free(fname);
-
-        n=write(fd, buffer, strlen(buffer));
-        if(n==-1)/*error*/exit(1);
-        
-        off_t offset = 0;
-        while (size > 0) {
-            ssize_t sent_bytes = sendfile(fd, asset_fd, &offset, size);
-            if (sent_bytes == -1) {
-                perror("Error sending file");
-                exit(1);
-            }
-            size -= sent_bytes;
-        }
-        n=write(fd, "\n", 1);
-        if(n==-1)/*error*/exit(1);
-        close(asset_fd);
-    } else {
+    if (strcmp(cmd, "OPA") == 0) { // opa msg
+        opa_msg(buffer, fd);
+    } else { // normal msg
         n=write(fd, buffer, strlen(buffer));
         if(n==-1)/*error*/exit(1);
     }
 
-    n=read(fd,buffer, BUFFER_SIZE);
-    if(n==-1)/*error*/exit(1);
-    buffer[n] = '\0';
-    
-    write(1,buffer,n);
+    analyze_reply_tcp(buffer, fd);
+
+    write(1,buffer,strlen(buffer));
 
     freeaddrinfo(res);
     close(fd);
@@ -179,9 +142,41 @@ char* getIpAddress() {
     return ipAddress;
 }
 
+void opa_msg(char *buffer, int fd) {
+    ssize_t n;
+    char name[MAX_NAME_DESC + 1];
+    char start_value[MAX_START_VAL + 1];
+    char timeactive[MAX_AUC_DURATION + 1];
+    char asset_fname[MAX_FILENAME];
+    long size = 0;
 
+    sscanf(buffer, "%*s %s %s %s %s %ld", name, start_value, timeactive, asset_fname, &size);
 
+    int asset_fd = open(asset_fname, O_RDONLY);
+    if (asset_fd == -1) {
+        perror("Error opening file");
+        exit(1);
+    }
+    char *fname = get_file_name(asset_fname);
+    
+    sprintf(buffer, "OPA %s %s %s %s %s %s %ld ", user.UID, user.password, name, start_value, timeactive, fname, size);    
+    free(fname);
 
-
+    n=write(fd, buffer, strlen(buffer));
+    if(n==-1)/*error*/exit(1);
+    
+    off_t offset = 0;
+    while (size > 0) {
+        ssize_t sent_bytes = sendfile(fd, asset_fd, &offset, size);
+        if (sent_bytes == -1) {
+            perror("Error sending file");
+            exit(1);
+        }
+        size -= sent_bytes;
+    }
+    n=write(fd, "\n", 1);
+    if(n==-1)/*error*/exit(1);
+    close(asset_fd);
+}
 
 

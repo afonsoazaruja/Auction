@@ -22,5 +22,6 @@ int main(int argc, char **argv);
 void send_request_udp(char *port, char *asip, char *buffer);
 void send_request_tcp(char *port, char *asip, char *buffer);
 char* getIpAddress();
+void opa_msg(char *buffer, int fd);
 
 #endif

@@ -15,10 +15,12 @@ void reply_mybids(char *status, char *buffer);
 void reply_list(char *status, char *buffer);
 void reply_show_record(char *status, char *buffer, const char *list);
 
-void analyze_reply_tcp(char *buffer);
-void reply_open(char *status, char *buffer);
+void analyze_reply_tcp(char *buffer, int fd);
+void reply_open(char *status, char *buffer, int fd);
 void reply_close(char *status, char *buffer);
-void reply_show_asset(char *status, char *buffer);
+void reply_show_asset(char *status, char *buffer, int fd);
 void reply_bid(char *status, char *buffer);
+
+void extract(char *src, char *dst, int fd);
 
 #endif

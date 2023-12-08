@@ -2,6 +2,8 @@
 #include <sys/stat.h>
 
 void build_path_user_dir(char *path_user_dir, char *uid);
+void try_to_login(int fd, struct sockaddr_in addr, char *path_user_dir, char *uid, char *password);
+void register_user(int fd, struct sockaddr_in addr, char *path_user_dir, char *uid, char *password);
 bool is_correct_password(char *password, char *path_user_dir, char *uid);
 void send_reply_to_user(int fd, struct sockaddr_in addr, char *message);
 char *get_path_user_dir(char *path_user_dir, char *uid);

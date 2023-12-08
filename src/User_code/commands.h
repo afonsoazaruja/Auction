@@ -14,7 +14,7 @@
 #include <sys/sendfile.h>
 #include <fcntl.h>
 
-#define MAX_CMD_SIZE 11
+#define MAX_CMD_SIZE 10
 
 typedef struct session {
     bool logged;

@@ -1,6 +1,7 @@
 #include "aux_executes.h"
 #include "../validations.h"
 #include <bits/types/cookie_io_functions_t.h>
+#include <netinet/in.h>
 
 
 void send_reply_to_user(int fd, struct sockaddr_in addr, char *reply) {
@@ -31,6 +32,26 @@ bool is_logged_in(char *path_user_dir, char *uid) {
     fclose(login_file);
     free(login_file_name);
     return true;
+}
+
+void try_to_login(int fd, struct sockaddr_in addr, char *path_user_dir, char *uid, char *password) {
+    if (is_correct_password(password, path_user_dir, uid)) {
+        create_login_file(uid, path_user_dir);
+        send_reply_to_user(fd, addr, "RLI OK\n");
+    } else {
+        send_reply_to_user(fd, addr, "RLI NOK\n");
+    }
+}
+
+void register_user(int fd, struct sockaddr_in addr, char *path_user_dir, char *uid, char *password) {
+    if (!directoryExists(path_user_dir)) {
+        if (mkdir(path_user_dir, 0777) != 0) {
+            perror("Error creating directory"); exit(1);
+        }
+    }
+    create_login_file(uid, path_user_dir);
+    create_pass_file(uid, password, path_user_dir);
+    send_reply_to_user(fd, addr, "RLI REG\n");
 }
 
 char *get_file_name(char *uid, char *path_user_dir, char *end_part) {  

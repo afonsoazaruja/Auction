@@ -4,41 +4,35 @@
 void ex_login(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID + 1];
     char password[SIZE_PASSWORD + 1];
-    FILE *pass_file;
-    FILE *uid_file;
     char path_user_dir[100];
 
-    sscanf(request, "%*s %s %s", uid, password);
+    if (sscanf(request, "%*s %s %s", uid, password) != 2) exit(1);
+    if (!is_login_valid(uid, password) || !validate_buffer(request)) {
+        send_reply_to_user(fd, addr, "RLI ERR\n");
+        return;
+    }
     build_path_user_dir(path_user_dir, uid);
 
     if (is_logged_in(path_user_dir, uid)) {
         send_reply_to_user(fd, addr, "user already logged in\n");
         return;
     }
-    if (is_registered(path_user_dir, uid)) {
-        if (is_correct_password(password, path_user_dir, uid)) {
-            create_login_file(uid, path_user_dir);
-            send_reply_to_user(fd, addr, "RLI OK\n");
-        } else {
-            send_reply_to_user(fd, addr, "RLI NOK\n");
-        }
-    } else {
-        if (!directoryExists(path_user_dir)) {
-            if (mkdir(path_user_dir, 0777) != 0) {
-                perror("Error creating directory"); exit(1);
-            }
-        }
-        create_login_file(uid, path_user_dir);
-        create_pass_file(uid, password, path_user_dir);
-        send_reply_to_user(fd, addr, "RLI REG\n");
-    }
+    if (is_registered(path_user_dir, uid)) 
+        try_to_login(fd, addr, path_user_dir, uid, password);
+    else 
+        register_user(fd, addr, path_user_dir, uid, password);
 }
 
 void ex_logout(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID + 1];
+    char password[SIZE_PASSWORD + 1];
     char path_user_dir[100];
 
-    sscanf(request, "%*s %s", uid);
+    if (sscanf(request, "%*s %s %s", uid, password) != 2) exit(1);
+    if (!is_UID(uid) || !is_password(password) || !validate_buffer(request)) {
+        send_reply_to_user(fd, addr, "RLO ERR\n");
+        return;
+    }
     build_path_user_dir(path_user_dir, uid);
 
     if (!is_registered(path_user_dir, uid)) {
@@ -62,9 +56,14 @@ void ex_logout(int fd, struct sockaddr_in addr, char *request) {
 
 void ex_unregister(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID + 1];
+    char password[SIZE_PASSWORD + 1];
     char path_user_dir[100];
 
-    sscanf(request, "%*s %s", uid);
+    if (sscanf(request, "%*s %s %s", uid, password) != 2) exit(1);
+    if (!is_UID(uid) || !is_password(password) || !validate_buffer(request)) {
+        send_reply_to_user(fd, addr, "RUR ERR\n");
+        return;
+    }    
     build_path_user_dir(path_user_dir, uid);
 
     if (!is_registered(path_user_dir, uid)) {

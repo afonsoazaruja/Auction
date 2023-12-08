@@ -2,8 +2,8 @@
 #include "commands.h"
 
 bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
-    char cmd[MAX_CMD_SIZE];
-    sscanf(buffer, "%10s", cmd); // extract command
+    char cmd[MAX_CMD_SIZE+1];
+    if (sscanf(buffer, "%10s", cmd) != 1) exit(1); // extract command
     *socket_type = SOCK_DGRAM; // assume its udp command
 
     if (!validate_buffer(buffer)) {
@@ -53,7 +53,7 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
 }
 
 bool handle_login(char *buffer, struct session *user) {
-    char uid[SIZE_UID + 1], password[SIZE_PASSWORD + 1];
+    char uid[SIZE_UID+1], password[SIZE_PASSWORD+1];
 
     if (sscanf(buffer, "%*s %s %s", uid, password) != 2 ||
         !is_login_valid(uid, password)) {
@@ -88,10 +88,10 @@ bool handle_record(char *buffer) {
 }
 
 bool handle_open(char *buffer, struct session *user) {
-    char name[MAX_NAME_DESC + 1];
-    char start_value[MAX_START_VAL + 1];
-    char timeactive[MAX_AUC_DURATION + 1];
-    char asset_fname[MAX_FILENAME];
+    char name[MAX_NAME_DESC+1];
+    char start_value[MAX_START_VAL+1];
+    char timeactive[MAX_AUC_DURATION+1];
+    char asset_fname[MAX_FILENAME+1];
 
     if (sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
         start_value, timeactive) != 4) {
@@ -152,7 +152,7 @@ bool handle_bid(char *buffer, struct session *user) {
 }
 
 bool handle_close(char *buffer, struct session *user) {
-    char aid[SIZE_AID + 1];
+    char aid[SIZE_AID+1];
     
     if (sscanf(buffer, "%*s %s", aid) != 1) {
         sprintf(buffer, "missing AID");

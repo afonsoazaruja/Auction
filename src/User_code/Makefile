@@ -1,8 +1,8 @@
 CC = gcc
-CFLAGS = -Wall -pedantic -g #-Werror
+CFLAGS = -Wall -pedantic -Werror -g 
 
 # Source files (all .c files in the current directory)
-SRCS = $(wildcard *.c)
+SRCS = $(wildcard *.c) ../validations.c
 
 # Executable name
 TARGET = user

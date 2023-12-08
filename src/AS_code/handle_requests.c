@@ -1,5 +1,6 @@
 #include "handle_requests.h"
-#include <stdio.h>
+#include "aux_executes.h"
+#include "executes.h"
 
 void handle_requests_udp(char *port, bool verbose) {
     int fd, errcode;
@@ -7,7 +8,7 @@ void handle_requests_udp(char *port, bool verbose) {
     socklen_t addrlen;
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
-    char msg[128];
+    char request[128];
 
     fd = socket(AF_INET, SOCK_DGRAM, 0); 
     if (fd == -1) /*error*/ exit(1);
@@ -18,77 +19,48 @@ void handle_requests_udp(char *port, bool verbose) {
     hints.ai_flags = AI_PASSIVE;
 
     errcode = getaddrinfo(NULL, port, &hints, &res);
-    if (errcode != 0) /*error*/ exit(1);
+    if (errcode != 0) exit(1);
 
     n = bind(fd, res->ai_addr, res->ai_addrlen);
-    if (n == -1) /*error*/ exit(1);
+    if (n == -1) exit(1);
 
     while (true) {
         addrlen = sizeof(addr);
-        n = recvfrom(fd, msg, 128, 0, (struct sockaddr*)&addr, &addrlen);
-        if (n == -1) /*error*/ exit(1);
+        n = recvfrom(fd, request, 128, 0, (struct sockaddr*)&addr, &addrlen);
+        if (n == -1) exit(1);
+        request[n] = '\0';
 
-        msg[n] = '\0';
-        printf("received: %s", msg);
-        execute_command_udp(fd, addr, msg);       
+        printf("received: %s", request);
+        if (!validate_buffer(request)) {
+            send_reply_to_user(fd, addr, "ERR");
+        } else {
+            execute_request_udp(fd, addr, request);       
+        }
     }
     freeaddrinfo(res);
     close(fd);
 }
 
-void execute_command_udp(int fd, struct sockaddr_in addr, char *msg) {
-    char cmd[10];
-    sscanf(msg, "%s", cmd); // extract command
+void execute_request_udp(int fd, struct sockaddr_in addr, char *request) {
+    char cmd[CMD_SIZE + 1];
+    sscanf(request, "%s", cmd);
 
     if (strcmp(cmd, "LIN") == 0)
-        ex_login(fd, addr);
+        ex_login(fd, addr, request);
     else if (strcmp(cmd, "LOU") == 0)
-        ex_logout(fd, addr, msg);
+        ex_logout(fd, addr, request);
     else if (strcmp(cmd, "UNR") == 0)
-        ex_unregister(fd, addr, msg);
+        ex_unregister(fd, addr, request);
     else if (strcmp(cmd, "LMA") == 0)
-        ex_myauctions(fd, addr, msg);
+        ex_myauctions(fd, addr, request);
     else if (strcmp(cmd, "LMB") == 0)
-        ex_mybids(fd, addr, msg);
+        ex_mybids(fd, addr, request);
     else if (strcmp(cmd, "LST") == 0)
-        ex_list(fd, addr, msg);
+        ex_list(fd, addr, request);
     else if (strcmp(cmd, "SRC") == 0)
-        ex_show_record(fd, addr, msg);
-}
-
-void send_msg_to_user(int fd, struct sockaddr_in addr, char *msg) {
-    int n = sendto(fd, msg, strlen(msg), 0, (struct sockaddr*)&addr, sizeof(addr));
-    if (n == -1) /*error*/ exit(1); 
-    
-}
-
-void ex_login(int fd, struct sockaddr_in addr) {
-    // To do (incomplete)
-    send_msg_to_user(fd, addr, "successful login\n");
-}
-void ex_logout(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "successful logout\n");
-}
-void ex_unregister(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_myauctions(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_mybids(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_list(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
-}
-void ex_show_record(int fd, struct sockaddr_in addr, char *msg) {
-    // To do
-    send_msg_to_user(fd, addr, "TEST\n");
+        ex_show_record(fd, addr, request);
+    else 
+        send_reply_to_user(fd, addr, "ERR\n");
 }
 
 void handle_requests_tcp(char *port, bool verbose) {
@@ -98,7 +70,7 @@ void handle_requests_tcp(char *port, bool verbose) {
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
     char buffer[128];
-    char *msg;
+    char *request;
 
     fd = socket(AF_INET, SOCK_STREAM, 0);  // TCP socket
     if (fd == -1) /*error*/ exit(1);
@@ -120,7 +92,7 @@ void handle_requests_tcp(char *port, bool verbose) {
         addrlen = sizeof(addr);
         if((newfd=accept(fd,(struct sockaddr*)&addr, &addrlen))==-1)/*error*/exit(1);
         
-        n=read(newfd, msg, 128);
+        n=read(newfd, request, 128);
         if(n==-1)/*error*/exit(1);
         write(1,"received: ",10); write(1,buffer,n);
 
@@ -132,3 +104,4 @@ void handle_requests_tcp(char *port, bool verbose) {
     freeaddrinfo(res);
     close(fd);
 }
+

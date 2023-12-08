@@ -1,32 +1,21 @@
 #ifndef GETID_H
 #define GETID_H
 
-#include <unistd.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <netdb.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include "../validations.h"
 
-#ifndef __cplusplus // To avoid conflict with C++ bool type
-typedef enum {
-    false = 0,
-    true = 1
-} bool;
-#endif
+
+#define CMD_SIZE 3
+#define MAX_STATUS_SIZE 3
+#define SIZE_PATH_USER_DIR 25
 
 void handle_requests_udp(char* port, bool verbose);
 void handle_requests_tcp(char* port, bool verbose);
-void execute_command_udp(int fd, struct sockaddr_in addr, char* msg);
-void send_msg_to_user(int fd, struct sockaddr_in addr, char *message);
-void ex_login(int fd, struct sockaddr_in addr);
-void ex_logout(int fd, struct sockaddr_in addr, char* msg);
-void ex_unregister(int fd, struct sockaddr_in addr, char* msg);
-void ex_myauctions(int fd, struct sockaddr_in addr, char* msg);
-void ex_mybids(int fd, struct sockaddr_in addr, char* msg);
-void ex_list(int fd, struct sockaddr_in addr, char* msg);
-void ex_show_record(int fd, struct sockaddr_in addr, char* msg);
+void execute_request_udp(int fd, struct sockaddr_in addr, char* msg);
 
 #endif

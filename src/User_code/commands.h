@@ -1,6 +1,7 @@
 #ifndef VERIFY_COMMANDS_H
 #define VERIFY_COMMANDS_H
 
+#include "../validations.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -12,6 +13,8 @@
 #include <stdbool.h>
 #include <sys/sendfile.h>
 #include <fcntl.h>
+
+#define MAX_CMD_SIZE 11
 
 typedef struct session {
     bool logged;

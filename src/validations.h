@@ -17,6 +17,8 @@
 #define MIN_FILENAME 5 // 1 char + .xxx
 #define MAX_FILESIZE 10 * 1024 * 1024
 
+bool validate_buffer(const char *buffer);
+
 bool is_login_valid(char *UID, char *password);
 bool is_AID(char *aid);
 bool is_UID(char *uid);

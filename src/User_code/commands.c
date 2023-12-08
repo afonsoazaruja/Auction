@@ -1,11 +1,15 @@
 #include "user.h"
 #include "commands.h"
-#include "validations.h"
 
 bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
-    char cmd[10];
-    sscanf(buffer, "%s", cmd); // extract command
+    char cmd[MAX_CMD_SIZE];
+    sscanf(buffer, "%10s", cmd); // extract command
     *socket_type = SOCK_DGRAM; // assume its udp command
+
+    if (!validate_buffer(buffer)) {
+        sprintf(buffer, "two or more spaces between words");
+        return false;
+    }
     // udp requests
     if (strcmp(cmd, "login") == 0) {
         return handle_login(buffer, user);
@@ -15,13 +19,13 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
         sprintf(buffer, "EXT\n");
     } else if (strcmp(cmd, "show_record") == 0 || strcmp(cmd, "sr") == 0) {
         return handle_record(buffer);
-    } else if (user->logged == false && strcmp(cmd, "show_asset") != 0 && (strcmp(cmd, "sa") != 0)) {
+    } else if (user->logged == false && strcmp(cmd, "show_asset") != 0 &&
+     (strcmp(cmd, "sa") != 0)) {
         sprintf(buffer, "user not logged in");
         return false;
     } // user must be logged in  
     else if (strcmp(cmd, "logout") == 0) {
         sprintf(buffer, "LOU %s %s\n", user->UID, user->password);
-        user->logged = false;
     } else if (strcmp(cmd, "unregister") == 0) {
         sprintf(buffer, "UNR %s %s\n", user->UID, user->password);
     } else if (strcmp(cmd, "myauctions") == 0 || strcmp(cmd, "ma") == 0) {
@@ -94,9 +98,7 @@ bool handle_open(char *buffer, struct session *user) {
             sprintf(buffer, "invalid data for open");
             return false;
     }
-
     char *fname = get_file_name(asset_fname);
-
     if (!is_open_valid(name, fname, start_value, timeactive)) {
         free(fname);
         sprintf(buffer, "invalid data for open");
@@ -129,7 +131,6 @@ bool handle_asset(char *buffer) {
     return true;
 }
 
-
 bool handle_bid(char *buffer, struct session *user) {
     int value = 0;
     char aid[SIZE_AID+1];
@@ -161,7 +162,6 @@ bool handle_close(char *buffer, struct session *user) {
         sprintf(buffer, "invalid AID");
         return false;
     }
-    
     sprintf(buffer, "CLS %s %s %s\n", user->UID, user->password, aid);
     return true;
 }

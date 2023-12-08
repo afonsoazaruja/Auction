@@ -33,11 +33,19 @@ int main(int argc, char **argv) {
         memset(buffer, 0, BUFFER_SIZE);
         write(1, "-> ", 3);
         fgets(buffer, BUFFER_SIZE, stdin);
+
+        // to be removed before submisson 
+        if (strcmp(buffer, "log\n") == 0) sprintf(buffer, "login 104168 password\n");
+        printf("%s", buffer);
+
         if (!is_input_valid(buffer, &socket_type, &user)) {
             printf("ERR: %s\n", buffer);
         } else {
-            if (strcmp(buffer, "EXT\n") == 0) break;
-            if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
+            if (strcmp(buffer, "EXT\n") == 0)  {
+                if (user.logged == false) break;
+                else puts("you need to logout before you exit");
+            }
+            else if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
             else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
         }
     }
@@ -48,35 +56,30 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     char cmd[4];
     int fd, errcode;
     ssize_t n;
-    // socklen_t addrlen;
     struct addrinfo hints, *res;
-    //struct sockaddr_in addr;
 
-    fd=socket(AF_INET,SOCK_STREAM,0); // TCP socket
-    if (fd==-1) exit(1); //error
+    fd=socket(AF_INET,SOCK_STREAM,0); 
+    if (fd==-1) exit(1); 
 
     memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET; //IPv4
-    hints.ai_socktype=SOCK_STREAM; //TCP socket
+    hints.ai_family = AF_INET; // IPv4
+    hints.ai_socktype = SOCK_STREAM; // TCP socket 
 
     errcode=getaddrinfo(asip,port,&hints,&res);
-    if(errcode!=0)/*error*/exit(1);
+    if(errcode!=0) exit(1);
 
     n=connect(fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1)/*error*/exit(1);
+    if(n==-1) exit(1);
 
     sscanf(buffer, "%s", cmd);
-    if (strcmp(cmd, "OPA") == 0) { // opa msg
-        opa_msg(buffer, fd);
+    if (strcmp(cmd, "OPA") == 0) { // open msg
+        send_open(buffer, fd);
     } else { // normal msg
         n=write(fd, buffer, strlen(buffer));
-        if(n==-1)/*error*/exit(1);
+        if(n==-1) exit(1);
     }
-
     analyze_reply_tcp(buffer, fd);
-
     write(1,buffer,strlen(buffer));
-
     freeaddrinfo(res);
     close(fd);
 }
@@ -89,19 +92,18 @@ void send_request_udp(char *port, char *asip, char *buffer) {
     struct sockaddr_in addr;
     
     fd = socket(AF_INET, SOCK_DGRAM, 0); 
-    if (fd == -1) /*error*/exit(1);
+    if (fd == -1) exit(1);
 
     memset(&hints,0,sizeof hints);
-    hints.ai_family=AF_INET; // IPv4
-    hints.ai_socktype=SOCK_DGRAM; // UDP socket
+    hints.ai_family = AF_INET; // IPv4
+    hints.ai_socktype = SOCK_DGRAM; // UDP socket
     errcode = getaddrinfo(asip, port, &hints, &res);
-    if (errcode != 0)/*error*/ exit(1);
+    if (errcode != 0) exit(1);
 
     n = sendto(fd, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
-    if (n == -1) /*error*/ exit(1);
+    if (n == -1) exit(1);
 
     addrlen = sizeof(addr);
-
     n = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addr, &addrlen);
     if (n == -1) exit(1);
     buffer[n] = '\0';
@@ -110,6 +112,38 @@ void send_request_udp(char *port, char *asip, char *buffer) {
     write(1, buffer, strlen(buffer));
     freeaddrinfo(res);
     close(fd);
+}
+
+void send_open(char *buffer, int fd) {
+    char name[MAX_NAME_DESC + 1];
+    char start_value[MAX_START_VAL + 1];
+    char timeactive[MAX_AUC_DURATION + 1];
+    char asset_fname[MAX_FILENAME];
+    long size = 0;
+
+    if (sscanf(buffer, "%*s %s %s %s %s %ld", name, start_value,
+     timeactive, asset_fname, &size) != 5) exit(1);
+
+    int asset_fd = open(asset_fname, O_RDONLY);
+    if (asset_fd == -1) {
+        perror("Error opening file"); exit(1);
+    }
+    char *fname = get_file_name(asset_fname);
+    
+    sprintf(buffer, "OPA %s %s %s %s %s %s %ld ", user.UID, user.password, name, start_value, timeactive, fname, size);    
+    free(fname);
+    if (write(fd, buffer, strlen(buffer)) == -1) exit(1);
+    
+    off_t offset = 0;
+    while (size > 0) {
+        ssize_t sent_bytes = sendfile(fd, asset_fd, &offset, size);
+        if (sent_bytes == -1) {
+            perror("Error sending file"); exit(1);
+        }
+        size -= sent_bytes;
+    }
+    if (write(fd, "\n", 1) == -1) exit(1);
+    close(asset_fd);
 }
 
 char* getIpAddress() {
@@ -122,7 +156,7 @@ char* getIpAddress() {
 
     if(gethostname(hostname,128)==-1) {
         fprintf(stderr,"error: %s\n",strerror(errno));
-        exit(EXIT_FAILURE); 
+        exit(1); 
     }
     memset(&hints,0,sizeof hints);
     hints.ai_family=AF_INET;
@@ -131,7 +165,7 @@ char* getIpAddress() {
 
     if ((errcode=getaddrinfo(hostname,NULL,&hints,&res))!=0) {
         fprintf(stderr,"error: getaddrinfo: %s\n",gai_strerror(errcode));
-        exit(EXIT_FAILURE);
+        exit(1);
     } else {
         for(p=res;p!=NULL;p=p->ai_next){
             addr=&((struct sockaddr_in *)p->ai_addr)->sin_addr;
@@ -142,41 +176,5 @@ char* getIpAddress() {
     return ipAddress;
 }
 
-void opa_msg(char *buffer, int fd) {
-    ssize_t n;
-    char name[MAX_NAME_DESC + 1];
-    char start_value[MAX_START_VAL + 1];
-    char timeactive[MAX_AUC_DURATION + 1];
-    char asset_fname[MAX_FILENAME];
-    long size = 0;
-
-    sscanf(buffer, "%*s %s %s %s %s %ld", name, start_value, timeactive, asset_fname, &size);
-
-    int asset_fd = open(asset_fname, O_RDONLY);
-    if (asset_fd == -1) {
-        perror("Error opening file");
-        exit(1);
-    }
-    char *fname = get_file_name(asset_fname);
-    
-    sprintf(buffer, "OPA %s %s %s %s %s %s %ld ", user.UID, user.password, name, start_value, timeactive, fname, size);    
-    free(fname);
-
-    n=write(fd, buffer, strlen(buffer));
-    if(n==-1)/*error*/exit(1);
-    
-    off_t offset = 0;
-    while (size > 0) {
-        ssize_t sent_bytes = sendfile(fd, asset_fd, &offset, size);
-        if (sent_bytes == -1) {
-            perror("Error sending file");
-            exit(1);
-        }
-        size -= sent_bytes;
-    }
-    n=write(fd, "\n", 1);
-    if(n==-1)/*error*/exit(1);
-    close(asset_fd);
-}
 
 

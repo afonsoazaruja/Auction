@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = # -Wall -Werror
 
 # Source files (all .c files in the current directory)
-SRCS = $(wildcard *.c)
+SRCS = $(wildcard *.c) ../validations.c
 
 # Executable name
 TARGET = AS

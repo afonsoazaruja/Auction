@@ -20,7 +20,7 @@ void reply_unregister(char *status, char *buffer);
 void reply_myauctions(char *status, char *buffer);
 void reply_mybids(char *status, char *buffer);
 void reply_list(char *status, char *buffer);
-void reply_show_record(char *status, char *buffer, const char *list);
+void reply_show_record(char *status, char *buffer);
 
 void analyze_reply_tcp(char *buffer, int fd);
 void reply_open(char *status, char *buffer, int fd);

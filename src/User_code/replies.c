@@ -32,7 +32,7 @@ void analyze_reply_udp(char *buffer) {
         } else if (strcmp(type_reply, "RLS") == 0) { 
             reply_list(status, buffer);
         } else if (strcmp(type_reply, "RRC") == 0) { 
-            reply_show_record(status, buffer, list);
+            reply_show_record(status, buffer);
         }
         free(list);
     }
@@ -40,7 +40,7 @@ void analyze_reply_udp(char *buffer) {
 
 void handle_auctions(char *list, char *buffer, char *type) {
     buffer[0] = '\0';
-    if (strcmp(type, "RRC") == 0) {
+    if (strcmp(type, "RRC") == 0) { // SHOW RECORD
         char host_uid[MAX_NAME_DESC+1] = "";
         char name[MAX_NAME_DESC+1] = "";
         char asset_fname[MAX_FILENAME+1] = "";
@@ -59,31 +59,26 @@ void handle_auctions(char *list, char *buffer, char *type) {
         while (token != NULL) {
             if (strcmp(token, "B") == 0) {
                 strcat(buffer, "┌\n│Bidder Name: "); 
-                token = strtok(NULL, " ");
-                strcat(buffer, token);
+                token = strtok(NULL, " "); strcat(buffer, token);
                 strcat(buffer, "\n│Bid Value: ");
-                token = strtok(NULL, " ");
-                strcat(buffer, token);
+                token = strtok(NULL, " "); strcat(buffer, token);
                 strcat(buffer, "\n│Date: ");
-                token = strtok(NULL, " ");
-                strcat(buffer, token);
-                token = strtok(NULL, " ");
-                strcat(buffer, token);
-                strcat(buffer, "\n");
-                strcat(buffer, "└\n");
+                token = strtok(NULL, " "); strcat(buffer, token);
+                strcat(buffer, " ");
+                token = strtok(NULL, " "); strcat(buffer, token);
+                strcat(buffer, "\n└\n");
             }
             else if (strcmp(token, "E") == 0) {
                 strcat(buffer, "┌───\n│Ended in: ");
-                token = strtok(NULL, " ");
-                strcat(buffer, token);
-                token = strtok(NULL, " ");
+                token = strtok(NULL, " "); strcat(buffer, token);
                 strcat(buffer, " ");
+                token = strtok(NULL, " "); 
                 strcat(buffer, token);
                 strcat(buffer, "\n└───\n");
             }
             token = strtok(NULL, " ");
         }      
-    } else {
+    } else { // LIST, MYAUCTIONS & MYBIDS
         char *token = strtok(list, " ");
         char tmp[4];
         if (strcmp(type, "RLS") == 0) {
@@ -98,7 +93,7 @@ void handle_auctions(char *list, char *buffer, char *type) {
                 }
                 token = strtok(NULL, " ");
             }
-            if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
+            if (strlen(buffer) == 0) sprintf(buffer, "no ongoing auctions\n");
         }    
         else if ((strcmp(type, "RMA") == 0) || (strcmp(type, "RMB") == 0)) {
             while (token != NULL) {
@@ -168,11 +163,11 @@ void reply_mybids(char *status, char *buffer) {
 
 void reply_list(char *status, char *buffer) {
     if (strcmp(status, "NOK") == 0) {
-        sprintf(buffer, "no auction was yet started\n");
+        sprintf(buffer, "no auctions were started\n");
     } 
 }
 
-void reply_show_record(char *status, char *buffer, const char *list) {
+void reply_show_record(char *status, char *buffer) {
     if (strcmp(status, "NOK") == 0) {
         sprintf(buffer, "the auction does not exist\n");
     }

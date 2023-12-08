@@ -7,15 +7,14 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
         if (cmd[0] == '\0') {
             sprintf(buffer, "invalid input");
             return false;
-        } 
+        }
         exit(1);
     }
-    *socket_type = SOCK_DGRAM; // assume its udp command
-
     if (!validate_buffer(buffer)) {
         sprintf(buffer, "two or more spaces between words");
         return false;
     }
+    *socket_type = SOCK_DGRAM; // assume its udp command
     // udp requests
     if (strcmp(cmd, "login") == 0) {
         return handle_login(buffer, user);
@@ -75,8 +74,8 @@ bool handle_login(char *buffer, struct session *user) {
     }
     else {
         sprintf(buffer, "LIN %s %s\n", uid, password);
-            strcpy(user->UID, uid);
-            strcpy(user->password, password);
+        strcpy(user->UID, uid);
+        strcpy(user->password, password);
     }
     return true;
 }
@@ -115,9 +114,13 @@ bool handle_open(char *buffer, struct session *user) {
     } else {
         long size = get_file_size(asset_fname);
         if (size > MAX_FILESIZE) {
-            sprintf(buffer, "image too big");
+            sprintf(buffer, "file too big");
             free(fname);
             return false;
+        }
+        else if (size == 0) {
+            sprintf(buffer, "file does not exist");  
+            return false; 
         }
         sprintf(buffer, "OPA %s %s %s %s %ld", name, start_value, timeactive, asset_fname, size);
         free(fname);
@@ -183,8 +186,7 @@ char* get_file_name(char *dir) {
 
     for(; a > 0; a--) {
         if(dir[a] == '/') {
-            a++;
-            break;
+            a++; break;
         }
     } for(; a < len; b++) {
         fname[b] = dir[a];
@@ -199,8 +201,6 @@ long get_file_size(char *fname) {
        
     if (stat(fname, &filestat) == 0) {
         return filestat.st_size;
-    } else {
-        perror("Error getting file information");
     }
-    return 0; // only to compile
+    return 0;
 }

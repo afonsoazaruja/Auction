@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         FD_SET(STDIN_FILENO, &read_fds);
         
         timeout.tv_sec = 0;
-        timeout.tv_usec = 10;
+        timeout.tv_usec = 100000; // 100 ms
 
         int ready = select(STDIN_FILENO + 1, &read_fds, NULL, NULL, &timeout);
 

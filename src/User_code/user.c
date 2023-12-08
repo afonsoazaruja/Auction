@@ -2,12 +2,15 @@
 #include "replies.h"
 
 session user = {false, "", ""};
+volatile sig_atomic_t ctrl_c = 0;
+bool first = true;
 
 int main(int argc, char **argv) {
+    char buffer[BUFFER_SIZE + 1];
     int socket_type;
     char port[6] = DEFAULT_PORT;
     char *asip = getIpAddress();
-    char buffer[BUFFER_SIZE + 1];
+    memset(buffer, 0, BUFFER_SIZE + 1);
     
     // Update ip and/or port 
     if (argc > 1) {
@@ -29,24 +32,56 @@ int main(int argc, char **argv) {
             } 
         }
     }
+
+    signal(SIGINT, handle_SIGINT);
+    
     while (true) {
-        memset(buffer, 0, BUFFER_SIZE);
-        write(1, "-> ", 3);
-        fgets(buffer, BUFFER_SIZE, stdin);
+        if (first) { // devido ao select, pois estaria sempre a dar print "-> "
+            write(1, "-> ", 3);
+            first = false;
+        }
+        fd_set read_fds;
+        struct timeval timeout;
 
-        // to be removed before submisson 
-        if (strcmp(buffer, "log\n") == 0) sprintf(buffer, "login 104168 password\n");
-        printf("%s", buffer);
+        FD_ZERO(&read_fds);
+        FD_SET(STDIN_FILENO, &read_fds);
+        
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 10;
 
-        if (!is_input_valid(buffer, &socket_type, &user)) {
-            printf("ERR: %s\n", buffer);
-        } else {
-            if (strcmp(buffer, "EXT\n") == 0)  {
-                if (user.logged == false) break;
-                else puts("you need to logout before you exit");
+        int ready = select(STDIN_FILENO + 1, &read_fds, NULL, NULL, &timeout);
+
+        if (ready > 0) {
+            if (FD_ISSET(STDIN_FILENO, &read_fds)) {
+                memset(buffer, 0, BUFFER_SIZE);
+                fgets(buffer, BUFFER_SIZE, stdin);
+
+                // to be removed before submisson 
+                //if (strcmp(buffer, "log\n") == 0) sprintf(buffer, "login 103624 password\n");
+                //printf("%s", buffer);
+
+                if (!is_input_valid(buffer, &socket_type, &user)) {
+                    printf("ERR: %s\n", buffer);
+                } else {
+                    if (strcmp(buffer, "EXT\n") == 0)  {
+                        if (user.logged == false) break;
+                        else puts("you need to logout before you exit");
+                    }
+                    else if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
+                    else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
+                }
+                first = true;
             }
-            else if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
-            else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
+        }
+        if (ctrl_c) {
+            ctrl_c = 0; // reset
+            if (user.logged == true) { // ctrl+c pressionado envia LOU cmd
+                sprintf(buffer, "LOU %s %s\n", user.UID, user.password);
+                puts("");
+                send_request_udp(port, asip, buffer);
+                break;
+            }
+            exit(1);
         }
     }
     free(asip);
@@ -176,5 +211,12 @@ char* getIpAddress() {
     return ipAddress;
 }
 
-
-
+void handle_SIGINT(int SIGNAL) {
+    if (user.logged == true) {
+        ctrl_c = 1;
+    }
+    else {
+        puts("");
+        exit(EXIT_SUCCESS);
+    }
+}

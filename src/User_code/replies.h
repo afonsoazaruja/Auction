@@ -7,6 +7,10 @@ extern session user;
 
 #define TYPE_REPLY_SIZE 3
 #define MAX_STATUS_SIZE 3
+#define BORDER_TOP_LEFT "┌"
+#define BORDER_LEFT "│"
+#define BORDER_BOTTOM_LEFT "└"
+#define BORDER_HORIZONTAL "─"
 
 void analyze_reply_udp(char *buffer);
 void handle_auctions(char *list, char *buffer, char *type);

@@ -22,7 +22,7 @@ void analyze_reply_udp(char *buffer) {
         if (list == NULL) exit(1);
         sscanf(buffer, "%*s %*s %[^\n]", list);
 
-        if (strcmp(status, "OK") == 0 && strcmp(type_reply, "RRC") != 0) {
+        if (strcmp(status, "OK") == 0) {
             handle_auctions(list, buffer, type_reply);
         }  
         else if (strcmp(type_reply, "RMA") == 0) { 
@@ -39,35 +39,79 @@ void analyze_reply_udp(char *buffer) {
 }
 
 void handle_auctions(char *list, char *buffer, char *type) {
-    char *token = strtok(list, " ");
-    char tmp[4];
     buffer[0] = '\0';
+    if (strcmp(type, "RRC") == 0) {
+        char host_uid[MAX_NAME_DESC+1] = "";
+        char name[MAX_NAME_DESC+1] = "";
+        char asset_fname[MAX_FILENAME+1] = "";
+        char start_value[MAX_START_VAL+1] = "";
+        char start_date[10+1] = "";
+        char start_time[8+1] = "";
+        char timeactive[MAX_AUC_DURATION+1] = "";
 
-    if (strcmp(type, "RLS") == 0) {
-        strcat(buffer, "ACTIVE AUCTIONS:\n");
+        sscanf(list, "%s %10s %s %s %s %s %s", host_uid, name, asset_fname, start_value, start_date, start_time, timeactive);
+
+        snprintf(buffer, BUFFER_SIZE, "┌───\t %s\n│Auction Host: %s\n│Opened in: %s %s\n│Duration: %s seconds\n│Asset Name: %s\n│Starting Bid: %s\n└───\n",
+        name, host_uid, start_date, start_time, timeactive, asset_fname, start_value);
+
+        char *token = strtok(list, " ");
+
         while (token != NULL) {
-            strcpy(tmp, token);
-            token = strtok(NULL, " ");
-            if (token[0] == '1') {
-                strcat(buffer, "AID: ");
-                strcat(buffer, tmp);
+            if (strcmp(token, "B") == 0) {
+                strcat(buffer, "┌\n│Bidder Name: "); 
+                token = strtok(NULL, " ");
+                strcat(buffer, token);
+                strcat(buffer, "\n│Bid Value: ");
+                token = strtok(NULL, " ");
+                strcat(buffer, token);
+                strcat(buffer, "\n│Date: ");
+                token = strtok(NULL, " ");
+                strcat(buffer, token);
+                token = strtok(NULL, " ");
+                strcat(buffer, token);
                 strcat(buffer, "\n");
+                strcat(buffer, "└\n");
+            }
+            else if (strcmp(token, "E") == 0) {
+                strcat(buffer, "┌───\n│Ended in: ");
+                token = strtok(NULL, " ");
+                strcat(buffer, token);
+                token = strtok(NULL, " ");
+                strcat(buffer, " ");
+                strcat(buffer, token);
+                strcat(buffer, "\n└───\n");
             }
             token = strtok(NULL, " ");
-        }
-        if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
-    }    
-    else if ((strcmp(type, "RMA") == 0) || (strcmp(type, "RMB") == 0)) {
-        while (token != NULL) {
-            strcpy(tmp, token);
-            token = strtok(NULL, " ");
-            strcat(buffer, "AID: ");
-            strcat(buffer, tmp);
-            if (token[0] == '1')
-                strcat(buffer, " ACTIVE\n");
-            else 
-                strcat(buffer, " INACTIVE\n");
-            token = strtok(NULL, " ");
+        }      
+    } else {
+        char *token = strtok(list, " ");
+        char tmp[4];
+        if (strcmp(type, "RLS") == 0) {
+            strcat(buffer, "ACTIVE AUCTIONS:\n");
+            while (token != NULL) {
+                strcpy(tmp, token);
+                token = strtok(NULL, " ");
+                if (token[0] == '1') {
+                    strcat(buffer, "AID: ");
+                    strcat(buffer, tmp);
+                    strcat(buffer, "\n");
+                }
+                token = strtok(NULL, " ");
+            }
+            if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
+        }    
+        else if ((strcmp(type, "RMA") == 0) || (strcmp(type, "RMB") == 0)) {
+            while (token != NULL) {
+                strcpy(tmp, token);
+                token = strtok(NULL, " ");
+                strcat(buffer, "AID: ");
+                strcat(buffer, tmp);
+                if (token[0] == '1')
+                    strcat(buffer, " ACTIVE\n");
+                else 
+                    strcat(buffer, " INACTIVE\n");
+                token = strtok(NULL, " ");
+            }
         }
     }
 }
@@ -129,11 +173,9 @@ void reply_list(char *status, char *buffer) {
 }
 
 void reply_show_record(char *status, char *buffer, const char *list) {
-    if (strcmp(status, "OK") == 0) {
-        strncpy(buffer, list, strlen(list));
-    } else if (strcmp(status, "NOK") == 0) {
+    if (strcmp(status, "NOK") == 0) {
         sprintf(buffer, "the auction does not exist\n");
-    } 
+    }
 }
 
 void analyze_reply_tcp(char *buffer, int fd) {

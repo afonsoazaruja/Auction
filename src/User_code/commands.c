@@ -2,8 +2,14 @@
 #include "commands.h"
 
 bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
-    char cmd[MAX_CMD_SIZE+1];
-    if (sscanf(buffer, "%10s", cmd) != 1) exit(1); // extract command
+    char cmd[MAX_CMD_SIZE+1] = "";
+    if (sscanf(buffer, "%11s", cmd) != 1) { // extract command
+        if (cmd[0] == '\0') {
+            sprintf(buffer, "invalid input");
+            return false;
+        } 
+        exit(1);
+    }
     *socket_type = SOCK_DGRAM; // assume its udp command
 
     if (!validate_buffer(buffer)) {
@@ -19,36 +25,39 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
         sprintf(buffer, "EXT\n");
     } else if (strcmp(cmd, "show_record") == 0 || strcmp(cmd, "sr") == 0) {
         return handle_record(buffer);
-    } else if (user->logged == false && strcmp(cmd, "show_asset") != 0 &&
-     (strcmp(cmd, "sa") != 0)) {
-        sprintf(buffer, "user not logged in");
-        return false;
-    } // user must be logged in  
-    else if (strcmp(cmd, "logout") == 0) {
-        sprintf(buffer, "LOU %s %s\n", user->UID, user->password);
-    } else if (strcmp(cmd, "unregister") == 0) {
-        sprintf(buffer, "UNR %s %s\n", user->UID, user->password);
-    } else if (strcmp(cmd, "myauctions") == 0 || strcmp(cmd, "ma") == 0) {
-        sprintf(buffer, "LMA %s\n", user->UID);
-    } else if (strcmp(cmd, "mybids") == 0 || strcmp(cmd, "mb") == 0) {
-        sprintf(buffer, "LMB %s\n", user->UID);
-    }
-    // tcp requests    
-    else {
-        *socket_type = SOCK_STREAM;
-        if (strcmp(cmd, "open") == 0) {
-            return handle_open(buffer, user);
-        } else if (strcmp(cmd, "close") == 0) {
-            return handle_close(buffer, user);
-        } else if ((strcmp(cmd, "show_asset") == 0) || (strcmp(cmd, "sa") == 0)) {
-            return handle_asset(buffer);
-        } else if ((strcmp(cmd, "bid") == 0) || (strcmp(cmd, "b") == 0)) {
-            return handle_bid(buffer, user);
-        } else {
-            sprintf(buffer, "invalid input");
-            return false;
+    } else if (user->logged == true || strcmp(cmd, "show_asset") == 0 ||
+     (strcmp(cmd, "sa") == 0)) {
+        // user must be logged in
+        if (strcmp(cmd, "logout") == 0) {
+            sprintf(buffer, "LOU %s %s\n", user->UID, user->password);
+        } else if (strcmp(cmd, "unregister") == 0) {
+            sprintf(buffer, "UNR %s %s\n", user->UID, user->password);
+        } else if (strcmp(cmd, "myauctions") == 0 || strcmp(cmd, "ma") == 0) {
+            sprintf(buffer, "LMA %s\n", user->UID);
+        } else if (strcmp(cmd, "mybids") == 0 || strcmp(cmd, "mb") == 0) {
+            sprintf(buffer, "LMB %s\n", user->UID);
         }
-    } 
+        // tcp requests    
+        else {
+            *socket_type = SOCK_STREAM;
+            if (strcmp(cmd, "open") == 0) {
+                return handle_open(buffer, user);
+            } else if (strcmp(cmd, "close") == 0) {
+                return handle_close(buffer, user);
+            } else if ((strcmp(cmd, "show_asset") == 0) || (strcmp(cmd, "sa") == 0)) {
+                return handle_asset(buffer);
+            } else if ((strcmp(cmd, "bid") == 0) || (strcmp(cmd, "b") == 0)) {
+                return handle_bid(buffer, user);
+            } else {
+                sprintf(buffer, "invalid input");
+                return false;
+            }
+        } 
+    }
+    else {
+        sprintf(buffer, "user not logged in or invalid input");
+        return false;
+    }   
     return true;
 }
 

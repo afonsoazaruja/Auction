@@ -9,6 +9,7 @@ int main(int argc, char **argv) {
     char buffer[BUFFER_SIZE + 1];
     int socket_type;
     char port[6] = DEFAULT_PORT;
+    // char *port1 = "58010";
     char *asip = getIpAddress();
     memset(buffer, 0, BUFFER_SIZE + 1);
     
@@ -32,6 +33,8 @@ int main(int argc, char **argv) {
             } 
         }
     }
+    printf("asip: %s\n", asip);
+    printf("port: %s\n", port);
 
     signal(SIGINT, handle_SIGINT);
     
@@ -47,7 +50,7 @@ int main(int argc, char **argv) {
         FD_SET(STDIN_FILENO, &read_fds);
         
         timeout.tv_sec = 0;
-        timeout.tv_usec = 100000; // 100 ms
+        timeout.tv_usec = 100000; // 100ms
 
         int ready = select(STDIN_FILENO + 1, &read_fds, NULL, NULL, &timeout);
 
@@ -100,11 +103,17 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     hints.ai_family = AF_INET; // IPv4
     hints.ai_socktype = SOCK_STREAM; // TCP socket 
 
-    errcode=getaddrinfo(asip,port,&hints,&res);
-    if(errcode!=0) exit(1);
+    errcode = getaddrinfo("localhost", port, &hints, &res);
+    if (errcode != 0) {
+        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(errcode));
+        exit(1);
+    }
 
-    n=connect(fd,res->ai_addr,res->ai_addrlen);
-    if(n==-1) exit(1);
+    n = connect(fd, res->ai_addr, res->ai_addrlen);
+    if (n == -1) {
+        perror("connect");
+        exit(1);
+    }
 
     sscanf(buffer, "%s", cmd);
     if (strcmp(cmd, "OPA") == 0) { // open msg

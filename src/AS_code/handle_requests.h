@@ -17,5 +17,7 @@
 void handle_requests_udp(char* port, bool verbose);
 void handle_requests_tcp(char* port, bool verbose);
 void execute_request_udp(int fd, struct sockaddr_in addr, char* msg);
+void execute_request_tcp(int fd, struct sockaddr_in addr, char* msg);
+void handle_requests_combined(char *port, bool verbose);
 
 #endif

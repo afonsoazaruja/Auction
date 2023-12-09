@@ -13,10 +13,10 @@ void ex_login(int fd, struct sockaddr_in addr, char *request) {
     }
     build_path_user_dir(path_user_dir, uid);
 
-    if (is_logged_in(path_user_dir, uid)) {
-        send_reply_to_user(fd, addr, "user already logged in\n");
-        return;
-    }
+    // if (is_logged_in(path_user_dir, uid)) {
+    //     send_reply_to_user(fd, addr, "user already logged in\n");
+    //     return;
+    // }
     if (is_registered(path_user_dir, uid)) 
         try_to_login(fd, addr, path_user_dir, uid, password);
     else 
@@ -90,17 +90,33 @@ void ex_unregister(int fd, struct sockaddr_in addr, char *request) {
 
 void ex_myauctions(int fd, struct sockaddr_in addr, char *request) {
     // To do
-    send_reply_to_user(fd, addr, "TEST\n");
+    send_reply_to_user(fd, addr, "TST NOP\n");
 }
 void ex_mybids(int fd, struct sockaddr_in addr, char *request) {
     // To do
-    send_reply_to_user(fd, addr, "TEST\n");
+    send_reply_to_user(fd, addr, "TST NOP\n");
 }
 void ex_list(int fd, struct sockaddr_in addr, char *request) {
     // To do
-    send_reply_to_user(fd, addr, "TEST\n");
+    send_reply_to_user(fd, addr, "TST NOP\n");
 }
 void ex_show_record(int fd, struct sockaddr_in addr, char *request) {
     // To do
-    send_reply_to_user(fd, addr, "TEST\n");
+    send_reply_to_user(fd, addr, "TST NOP\n");
+}
+void ex_open(int fd, struct sockaddr_in addr, char *request) {
+    // To do
+    send_reply_to_user(fd, addr, "TST NOP\n");
+}
+void ex_close(int fd, struct sockaddr_in addr, char *request) {
+    // To do
+    send_reply_to_user(fd, addr, "TST NOP\n");
+}
+void ex_show_asset(int fd, struct sockaddr_in addr, char *request) {
+    // To do
+    send_reply_to_user(fd, addr, "TST NOP\n");
+}
+void ex_bid(int fd, struct sockaddr_in addr, char *request) {
+    // To do
+    send_reply_to_user(fd, addr, "TST NOP\n");
 }

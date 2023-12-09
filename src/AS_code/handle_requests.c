@@ -1,45 +1,122 @@
 #include "handle_requests.h"
 #include "aux_executes.h"
 #include "executes.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+#include <errno.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <sys/select.h>
 
-void handle_requests_udp(char *port, bool verbose) {
-    int fd, errcode;
-    ssize_t n;
-    socklen_t addrlen;
-    struct addrinfo hints, *res;
-    struct sockaddr_in addr;
-    char request[128];
+#define DEFAULT_PORT "58023"
+#define MAX_BUFFER_SIZE 128
 
-    fd = socket(AF_INET, SOCK_DGRAM, 0); 
-    if (fd == -1) /*error*/ exit(1);
+void handle_requests_combined(char *port, bool verbose) {
+    int udp_socket, tcp_socket;
+    struct sockaddr_in udp_addr, tcp_addr;
+    socklen_t udp_addrlen, tcp_addrlen;
+    char buffer[MAX_BUFFER_SIZE];
 
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;       
-    hints.ai_socktype = SOCK_DGRAM;  
-    hints.ai_flags = AI_PASSIVE;
+    // Create UDP socket
+    udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udp_socket == -1) {
+        perror("UDP socket");
+        exit(EXIT_FAILURE);
+    }
 
-    errcode = getaddrinfo(NULL, port, &hints, &res);
-    if (errcode != 0) exit(1);
+    // Create TCP socket
+    tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (tcp_socket == -1) {
+        perror("TCP socket");
+        exit(EXIT_FAILURE);
+    }
 
-    n = bind(fd, res->ai_addr, res->ai_addrlen);
-    if (n == -1) exit(1);
+    // Initialize UDP address structure
+    memset(&udp_addr, 0, sizeof(udp_addr));
+    udp_addr.sin_family = AF_INET;
+    udp_addr.sin_addr.s_addr = INADDR_ANY;
+    udp_addr.sin_port = htons(atoi(port));
+
+    // Initialize TCP address structure
+    memset(&tcp_addr, 0, sizeof(tcp_addr));
+    tcp_addr.sin_family = AF_INET;
+    tcp_addr.sin_addr.s_addr = INADDR_ANY;
+    tcp_addr.sin_port = htons(atoi(port));
+
+    // Bind UDP socket
+    if (bind(udp_socket, (struct sockaddr*)&udp_addr, sizeof(udp_addr)) == -1) {
+        perror("UDP bind");
+        exit(EXIT_FAILURE);
+    }
+    // Bind TCP socket
+    if (bind(tcp_socket, (struct sockaddr*)&tcp_addr, sizeof(tcp_addr)) == -1) {
+        perror("TCP bind");
+        exit(EXIT_FAILURE);
+    }
+    // Listen for incoming TCP connections
+    if (listen(tcp_socket, 5) == -1) {
+        perror("TCP listen");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("port:%s\nverbose: %d\n", port, verbose);
 
     while (true) {
-        addrlen = sizeof(addr);
-        n = recvfrom(fd, request, 128, 0, (struct sockaddr*)&addr, &addrlen);
-        if (n == -1) exit(1);
-        request[n] = '\0';
+        fd_set read_fds;
+        int max_fd;
 
-        printf("received: %s", request);
-        if (!validate_buffer(request)) {
-            send_reply_to_user(fd, addr, "ERR");
-        } else {
-            execute_request_udp(fd, addr, request);       
+        FD_ZERO(&read_fds);
+        FD_SET(udp_socket, &read_fds);
+        FD_SET(tcp_socket, &read_fds);
+
+        max_fd = (udp_socket > tcp_socket) ? udp_socket : tcp_socket;
+
+        if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1) {
+            perror("select");
+            exit(EXIT_FAILURE);
+        }
+        // Check UDP socket
+        if (FD_ISSET(udp_socket, &read_fds)) {
+            udp_addrlen = sizeof(struct sockaddr_in);
+            ssize_t n = recvfrom(udp_socket, buffer, sizeof(buffer), 0, (struct sockaddr*)&udp_addr, &udp_addrlen);
+            if (n == -1) perror("UDP recvfrom");
+            else {
+                buffer[n] = '\0';
+                if(verbose) printf("UDP received: %s", buffer);
+                if (!validate_buffer(buffer)) {
+                   send_reply_to_user(udp_socket, udp_addr, "ERR");
+                } else {
+                    execute_request_udp(udp_socket, udp_addr, buffer);       
+                }
+            }
+        }
+        // Check TCP socket
+        if (FD_ISSET(tcp_socket, &read_fds)) {
+            int new_tcp_socket;
+
+            tcp_addrlen = sizeof(struct sockaddr_in);
+            new_tcp_socket = accept(tcp_socket, (struct sockaddr*)&tcp_addr, &tcp_addrlen);
+            if (new_tcp_socket == -1) perror("TCP accept"); 
+            else {
+                ssize_t n = recv(new_tcp_socket, buffer, sizeof(buffer), 0);
+                if (n == -1) {
+                    perror("TCP recv");
+                } else if (n == 0) {
+                    close(new_tcp_socket); // Connection closed
+                } else {
+                    buffer[n] = '\0';
+                    if(verbose) printf("TCP received: %s", buffer);
+                    if(!validate_buffer(buffer)) send_reply_to_user(new_tcp_socket, tcp_addr, "ERR");
+                    else execute_request_tcp(new_tcp_socket, tcp_addr, buffer);
+                }
+            }
         }
     }
-    freeaddrinfo(res);
-    close(fd);
 }
+
 
 void execute_request_udp(int fd, struct sockaddr_in addr, char *request) {
     char cmd[CMD_SIZE + 1];
@@ -63,45 +140,19 @@ void execute_request_udp(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "ERR\n");
 }
 
-void handle_requests_tcp(char *port, bool verbose) {
-    int fd, errcode, newfd;
-    ssize_t n;
-    socklen_t addrlen;
-    struct addrinfo hints, *res;
-    struct sockaddr_in addr;
-    char buffer[128];
-    char *request;
+void execute_request_tcp(int fd, struct sockaddr_in addr, char *request) {
+    char cmd[CMD_SIZE + 1];
+    sscanf(request, "%s", cmd);
 
-    fd = socket(AF_INET, SOCK_STREAM, 0);  // TCP socket
-    if (fd == -1) /*error*/ exit(1);
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;       // IPv4
-    hints.ai_socktype = SOCK_STREAM;  // TCP socket
-    hints.ai_flags = AI_PASSIVE;
-
-    errcode = getaddrinfo(NULL, port, &hints, &res);
-    if (errcode != 0) /*error*/ exit(1);
-
-    n = bind(fd, res->ai_addr, res->ai_addrlen);
-    if (n == -1) /*error*/ exit(1);
-
-    if(listen(fd,5)==-1)/*error*/exit(1);
-
-    while (1) {
-        addrlen = sizeof(addr);
-        if((newfd=accept(fd,(struct sockaddr*)&addr, &addrlen))==-1)/*error*/exit(1);
-        
-        n=read(newfd, request, 128);
-        if(n==-1)/*error*/exit(1);
-        write(1,"received: ",10); write(1,buffer,n);
-
-        n=write(newfd,buffer,n);
-        if(n==-1)/*error*/exit(1);
-
-        close(newfd);
-    }
-    freeaddrinfo(res);
-    close(fd);
+    if (strcmp(cmd, "OPA") == 0)
+        ex_open(fd, addr, request);
+    else if (strcmp(cmd, "CLS") == 0)
+        ex_close(fd, addr, request);
+    else if (strcmp(cmd, "SAS") == 0)
+        ex_show_asset(fd, addr, request);
+    else if (strcmp(cmd, "BID") == 0)
+        ex_bid(fd, addr, request);
+    else 
+        send_reply_to_user(fd, addr, "ERR\n");
 }
 

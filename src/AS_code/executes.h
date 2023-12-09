@@ -7,3 +7,7 @@ void ex_myauctions(int fd, struct sockaddr_in addr, char* msg);
 void ex_mybids(int fd, struct sockaddr_in addr, char* msg);
 void ex_list(int fd, struct sockaddr_in addr, char* msg);
 void ex_show_record(int fd, struct sockaddr_in addr, char* msg);
+void ex_open(int fd, struct sockaddr_in addr, char *request);
+void ex_close(int fd, struct sockaddr_in addr, char *request);
+void ex_show_asset(int fd, struct sockaddr_in addr, char *request);
+void ex_bid(int fd, struct sockaddr_in addr, char *request);

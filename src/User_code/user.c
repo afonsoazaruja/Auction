@@ -2,7 +2,6 @@
 #include "replies.h"
 
 session user = {false, "", ""};
-volatile sig_atomic_t ctrl_c = 0;
 bool first = true;
 
 int main(int argc, char **argv) {
@@ -35,8 +34,6 @@ int main(int argc, char **argv) {
     }
     printf("asip: %s\n", asip);
     printf("port: %s\n", port);
-
-    signal(SIGINT, handle_SIGINT);
     
     while (true) {
         if (first) { // devido ao select, pois estaria sempre a dar print "-> "
@@ -76,16 +73,6 @@ int main(int argc, char **argv) {
                 first = true;
             }
         }
-        if (ctrl_c) {
-            ctrl_c = 0; // reset
-            if (user.logged == true) { // ctrl+c pressionado envia LOU cmd
-                sprintf(buffer, "LOU %s %s\n", user.UID, user.password);
-                puts("");
-                send_request_udp(port, asip, buffer);
-                break;
-            }
-            exit(1);
-        }
     }
     free(asip);
 }
@@ -103,7 +90,8 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     hints.ai_family = AF_INET; // IPv4
     hints.ai_socktype = SOCK_STREAM; // TCP socket 
 
-    errcode = getaddrinfo("localhost", port, &hints, &res);
+    errcode = getaddrinfo(asip, port, &hints, &res);
+
     if (errcode != 0) {
         fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(errcode));
         exit(1);
@@ -218,14 +206,4 @@ char* getIpAddress() {
         freeaddrinfo(res);
     }
     return ipAddress;
-}
-
-void handle_SIGINT(int SIGNAL) {
-    if (user.logged == true) {
-        ctrl_c = 1;
-    }
-    else {
-        puts("");
-        exit(EXIT_SUCCESS);
-    }
 }

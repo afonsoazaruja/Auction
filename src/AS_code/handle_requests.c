@@ -20,49 +20,42 @@ void handle_requests_combined(char *port, bool verbose) {
     socklen_t udp_addrlen, tcp_addrlen;
     char buffer[MAX_BUFFER_SIZE];
 
-    // Create UDP socket
     udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if (udp_socket == -1) {
         perror("UDP socket");
         exit(EXIT_FAILURE);
     }
 
-    // Create TCP socket
     tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (tcp_socket == -1) {
         perror("TCP socket");
         exit(EXIT_FAILURE);
     }
 
-    // Initialize UDP address structure
     memset(&udp_addr, 0, sizeof(udp_addr));
     udp_addr.sin_family = AF_INET;
     udp_addr.sin_addr.s_addr = INADDR_ANY;
     udp_addr.sin_port = htons(atoi(port));
 
-    // Initialize TCP address structure
     memset(&tcp_addr, 0, sizeof(tcp_addr));
     tcp_addr.sin_family = AF_INET;
     tcp_addr.sin_addr.s_addr = INADDR_ANY;
     tcp_addr.sin_port = htons(atoi(port));
 
-    // Bind UDP socket
     if (bind(udp_socket, (struct sockaddr*)&udp_addr, sizeof(udp_addr)) == -1) {
         perror("UDP bind");
         exit(EXIT_FAILURE);
     }
-    // Bind TCP socket
     if (bind(tcp_socket, (struct sockaddr*)&tcp_addr, sizeof(tcp_addr)) == -1) {
         perror("TCP bind");
         exit(EXIT_FAILURE);
     }
-    // Listen for incoming TCP connections
     if (listen(tcp_socket, 5) == -1) {
         perror("TCP listen");
         exit(EXIT_FAILURE);
     }
 
-    printf("port:%s\nverbose: %d\n", port, verbose);
+    printf("port: %s\nverbose: %d\n", port, verbose);
 
     while (true) {
         fd_set read_fds;
@@ -101,16 +94,26 @@ void handle_requests_combined(char *port, bool verbose) {
             new_tcp_socket = accept(tcp_socket, (struct sockaddr*)&tcp_addr, &tcp_addrlen);
             if (new_tcp_socket == -1) perror("TCP accept"); 
             else {
-                ssize_t n = recv(new_tcp_socket, buffer, sizeof(buffer), 0);
-                if (n == -1) {
-                    perror("TCP recv");
-                } else if (n == 0) {
-                    close(new_tcp_socket); // Connection closed
-                } else {
-                    buffer[n] = '\0';
-                    if(verbose) printf("TCP received: %s", buffer);
-                    if(!validate_buffer(buffer)) send_reply_to_user(new_tcp_socket, tcp_addr, "ERR");
-                    else execute_request_tcp(new_tcp_socket, tcp_addr, buffer);
+                pid_t pid = fork();
+                if (pid == -1) {
+                    perror("fork tcp");
+                    close(new_tcp_socket);
+                }
+                else if (pid == 0) { // child
+                    ssize_t n = recv(new_tcp_socket, buffer, sizeof(buffer), 0);
+                    if (n == -1) {
+                        perror("TCP recv");
+                    } else if (n == 0) {
+                        close(new_tcp_socket);
+                    } else {
+                        buffer[n] = '\0';
+                        if(verbose) printf("TCP received: %s", buffer);
+                        if(!validate_buffer(buffer)) send_reply_to_user(new_tcp_socket, tcp_addr, "ERR");
+                        else execute_request_tcp(new_tcp_socket, tcp_addr, buffer);
+                    }
+                }
+                else { // parent
+                    close(new_tcp_socket);
                 }
             }
         }

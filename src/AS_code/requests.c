@@ -1,8 +1,9 @@
 #include "requests.h"
 #include "aux_executes.h"
 #include <stdio.h>
+#include <sys/select.h>
 
-void handle_requests(char *port, bool verbose) {
+void handle_requests(char *port) {
     int udp_socket, tcp_socket;
     struct sockaddr_in udp_addr, tcp_addr;
     socklen_t udp_addrlen, tcp_addrlen;
@@ -21,7 +22,6 @@ void handle_requests(char *port, bool verbose) {
         perror("TCP listen");
         exit(1);
     }
-    printf("port: %s\nverbose: %d\n", port, verbose);
 
     while (true) {
         fd_set read_fds;
@@ -38,11 +38,11 @@ void handle_requests(char *port, bool verbose) {
         }
         // Check UDP socket
         if (FD_ISSET(udp_socket, &read_fds)) {
-            handle_udp_socket(udp_socket, udp_addr, verbose);
+            handle_udp_socket(udp_socket, udp_addr);
         }
         // Check TCP socket
         if (FD_ISSET(tcp_socket, &read_fds)) {
-            handle_tcp_socket(tcp_socket, tcp_addr, verbose);
+            handle_tcp_socket(tcp_socket, tcp_addr);
         }
     }
 }
@@ -73,7 +73,7 @@ void do_bind(int socket, struct sockaddr_in *addr) {
     }
 }
 
-void handle_udp_socket(int udp_socket, struct sockaddr_in udp_addr, bool verbose) {
+void handle_udp_socket(int udp_socket, struct sockaddr_in udp_addr) {
     socklen_t udp_addrlen;
     char buffer[MAX_BUFFER_SIZE];
 
@@ -94,7 +94,7 @@ void handle_udp_socket(int udp_socket, struct sockaddr_in udp_addr, bool verbose
     }
 }
 
-void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr, bool verbose) {
+void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr) {
     socklen_t tcp_addrlen;
     char buffer[MAX_BUFFER_SIZE];
 
@@ -104,32 +104,17 @@ void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr, bool verbose
 
     if (new_tcp_socket == -1) {
         perror("TCP accept");
-    } else {
-        pid_t pid = fork();
-
-        if (pid == -1) {
-            perror("fork tcp");
-            close(new_tcp_socket);
-        } else if (pid == 0) { // child
-            ssize_t n = recv(new_tcp_socket, buffer, sizeof(buffer), 0);
-
-            if (n == -1) {
-                perror("TCP recv");
-            } else if (n == 0) {
-                close(new_tcp_socket);
-            } else {
-                buffer[n] = '\0';
-                if (verbose) printf("TCP received: %s", buffer);
-
-                if (!validate_buffer(buffer)) {
-                    send_reply_to_user(new_tcp_socket, tcp_addr, "ERR\n");
-                } else {
-                    execute_request_tcp(new_tcp_socket, tcp_addr, buffer);
-                }
-            }
-        } else { // parent
-            close(new_tcp_socket);
+    }
+    else {
+        ssize_t n, total = 0;
+        while (total < 3) { // cmd
+            n = recv(new_tcp_socket, buffer + total, 1, 0);
+            if(n==-1)/*error*/exit(EXIT_FAILURE);
+            total += n;
         }
+        buffer[total] = '\0';
+        execute_request_tcp(new_tcp_socket, tcp_addr, buffer);
+        close(new_tcp_socket);
     }
 }
     
@@ -158,16 +143,43 @@ void execute_request_udp(int fd, struct sockaddr_in addr, char *request) {
 void execute_request_tcp(int fd, struct sockaddr_in addr, char *request) {
     char cmd[CMD_SIZE + 1];
     sscanf(request, "%s", cmd);
-
-    if (strcmp(cmd, "OPA") == 0)
+    if (strcmp(cmd, "OPA") == 0) {
+        extract(request, fd, 8);
+        if (verbose) printf("TCP received: %s\n", request);
         ex_open(fd, addr, request);
-    else if (strcmp(cmd, "CLS") == 0)
-        ex_close(fd, addr, request);
-    else if (strcmp(cmd, "SAS") == 0)
-        ex_show_asset(fd, addr, request);
-    else if (strcmp(cmd, "BID") == 0)
-        ex_bid(fd, addr, request);
-    else 
-        send_reply_to_user(fd, addr, "ERR\n");
+    } else {
+        extract(request, fd, 0);
+        if (verbose) printf("TCP received: %s", request);
+
+        if (!validate_buffer(request)) send_reply_to_user(fd, addr, "ERR\n");
+        if (strcmp(cmd, "CLS") == 0)
+            ex_close(fd, addr, request);
+        else if (strcmp(cmd, "SAS") == 0)
+            ex_show_asset(fd, addr, request);
+        else if (strcmp(cmd, "BID") == 0)
+            ex_bid(fd, addr, request);
+        else
+            send_reply_to_user(fd, addr, "ERR\n");
+    }
 }
 
+void extract(char *src, int fd, int args) {
+    int num_spaces = 0;
+    ssize_t n = 0, total = 3; // 3 for cmd
+    while(args == 0 || args > num_spaces) {
+        n=recv(fd, src + total, 1, 0);
+        if(n==-1)/*error*/exit(EXIT_FAILURE);
+        total += n;
+        src[total] = '\0';
+        if (src[total-1] == ' ') {
+            if(++num_spaces == args) {
+                src[total-1] = '\0';
+                break;
+            }
+        }
+        if (src[total-1] == '\n' || src[total-1] == '\0') {
+            src[total] = '\0';
+            break;
+        }
+    }
+}

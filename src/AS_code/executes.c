@@ -43,7 +43,7 @@ void ex_logout(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RLO NOK\n");
         return;
     }
-    char *login_file_name = get_file_name(uid, path_user_dir, "_login.txt");
+    char *login_file_name = get_file_name(path_user_dir, uid, "_login", ".txt");
 
     if (remove(login_file_name) == 0) {
        free(login_file_name);
@@ -74,8 +74,8 @@ void ex_unregister(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RUR NOK\n");
         return;
     }
-    char *login_file_name = get_file_name(uid, path_user_dir, "_login.txt");
-    char *pass_file_name = get_file_name(uid, path_user_dir, "_pass.txt");
+    char *login_file_name = get_file_name(path_user_dir, uid, "_login", ".txt");
+    char *pass_file_name = get_file_name(path_user_dir, uid, "_pass", ".txt");
 
     if (remove(login_file_name) == 0 && remove(pass_file_name) == 0) {
        free(login_file_name);
@@ -106,18 +106,83 @@ void ex_show_record(int fd, struct sockaddr_in addr, char *request) {
 }
 
 void ex_open(int fd, struct sockaddr_in addr, char *request) {
-    // To do
-    send_reply_to_user(fd, addr, "ROA OK 099\n");
+    char uid[SIZE_UID+1];
+    char pwd[SIZE_PASSWORD+1];
+    char name[MAX_NAME_DESC+1];
+    char start_value[MAX_START_VAL+1];
+    char timeactive[MAX_AUC_DURATION+1];
+    char asset_fname[MAX_FILENAME+1];
+    long size = 0;
+    char user_dir[100];
+    char asset_dir[100];
+    char aid[4];
+
+    sscanf(request, "%*s %s %s %s %s %s %s %ld", uid, pwd, name, start_value, timeactive, asset_fname, &size);
+
+    build_path_user_dir(user_dir, uid);
+    if (!is_logged_in(user_dir, uid)) {
+        send_reply_to_user(fd, addr, "ROA NLG\n");
+        return;
+    }
+
+    if (!is_open_valid(name, asset_fname, start_value, timeactive)) {
+        send_reply_to_user(fd, addr, "ROA NOK\n");
+        return;
+    }
+
+    num_aid++; format_aid(aid);
+
+    register_auction(fd, addr, uid, name, asset_fname, start_value, timeactive, aid);
+    build_auction_asset_dir(asset_dir, aid);
+    char *asset_file = get_file_name(asset_dir, asset_fname, "", "");
+
+    char *data = malloc(size);
+    FILE *file = fopen(asset_file, "wb");
+    if (file == NULL) {
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
+    }
+    ssize_t n = 0;
+    do { // read bytes of file and write
+        n=recv(fd, data, size, 0);
+        if(n==-1)/*error*/exit(1);
+        size_t bytes_written = fwrite(data, 1, n, file);
+        if (bytes_written != n) {
+            perror("Error writing to file");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        size -= n;
+    } while(size != 0);
+
+    sprintf(request, "ROA OK %s\n", aid);
+    send_reply_to_user(fd, addr, request);
 }
+
 void ex_close(int fd, struct sockaddr_in addr, char *request) {
+    char uid[SIZE_UID+1];
+    char pwd[SIZE_PASSWORD+1];
+    char aid[MAX_STATUS_SIZE+1];
+    sscanf(request, "%*s %s %s %s", uid, pwd, aid);
+
     // To do
     send_reply_to_user(fd, addr, "TST NOP\n");
 }
+
 void ex_show_asset(int fd, struct sockaddr_in addr, char *request) {
+    char aid[MAX_STATUS_SIZE+1];
+    sscanf(request, "%*s %s", aid);
+
     // To do
     send_reply_to_user(fd, addr, "TST NOP\n");
 }
+
 void ex_bid(int fd, struct sockaddr_in addr, char *request) {
+    char uid[SIZE_UID+1];
+    char pwd[SIZE_PASSWORD+1];
+    char aid[MAX_STATUS_SIZE+1];
+    sscanf(request, "%*s %s %s %s", uid, pwd, aid);
+
     // To do
     send_reply_to_user(fd, addr, "TST NOP\n");
 }

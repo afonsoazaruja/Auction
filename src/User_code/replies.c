@@ -207,13 +207,7 @@ void reply_open(char *status, char *buffer, int fd) {
         sprintf(buffer, "auction could not be started\n");
     } else if (strcmp(status, "NLG") == 0) {
         sprintf(buffer, "user not logged in\n");
-    } else if (strcmp(status, "EAU") == 0) {
-        sprintf(buffer, "auction AID does not exist\n");
-    } else if (strcmp(status, "EOW") == 0) {
-        sprintf(buffer, "auction is not owned by user UID\n");
-    } else if (strcmp(status, "END") == 0) {
-        sprintf(buffer, "auction time already ended\n");
-    } 
+    }
 }
 
 void reply_close(char *status, char *buffer) {

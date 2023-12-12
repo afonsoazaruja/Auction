@@ -29,6 +29,8 @@ int main(int argc, char **argv) {
             } 
         }
     }
+    printf("> asip: %s\n> port: %s\n", asip, port);
+
     while (true) {
         write(1, "-> ", 3);
         memset(buffer, 0, BUFFER_SIZE);
@@ -78,7 +80,6 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     } else { // normal msg
         if (write(fd, buffer, strlen(buffer)) == -1) exit(1);
     }
-    puts(buffer);
     analyze_reply_tcp(buffer, fd);
     write(1,buffer,strlen(buffer));
     freeaddrinfo(res);

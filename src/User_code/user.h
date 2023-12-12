@@ -5,14 +5,13 @@
 #include "../validations.h"
 #include <netdb.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <errno.h>
-#include <signal.h>
-#include <sys/select.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
 
 #define DEFAULT_PORT "58023" // 58000 + 23
 #define BUFFER_SIZE 7000

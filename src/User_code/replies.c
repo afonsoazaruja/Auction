@@ -202,7 +202,6 @@ void reply_open(char *status, char *buffer, int fd) {
     char aid[SIZE_AID+1] = "";
     if (strcmp(status, "OK") == 0) {
         extract(buffer, aid, fd); // AID
-        // sscanf(buffer, "%*s %*s %s", aid);
         sprintf(buffer, "auction successfully created AID %s\n", aid);
     } else if (strcmp(status, "NOK") == 0) {
         sprintf(buffer, "auction could not be started\n");

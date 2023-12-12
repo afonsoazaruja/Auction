@@ -75,8 +75,8 @@ bool handle_login(char *buffer, struct session *user) {
     }
     else {
         sprintf(buffer, "LIN %s %s\n", uid, password);
-            strcpy(user->UID, uid);
-            strcpy(user->password, password);
+        strcpy(user->UID, uid);
+        strcpy(user->password, password);
     }
     return true;
 }

@@ -104,9 +104,10 @@ void ex_show_record(int fd, struct sockaddr_in addr, char *request) {
     // To do
     send_reply_to_user(fd, addr, "TST NOP\n");
 }
+
 void ex_open(int fd, struct sockaddr_in addr, char *request) {
     // To do
-    send_reply_to_user(fd, addr, "TST NOP\n");
+    send_reply_to_user(fd, addr, "ROA OK 099\n");
 }
 void ex_close(int fd, struct sockaddr_in addr, char *request) {
     // To do

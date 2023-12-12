@@ -2,15 +2,13 @@
 #include "replies.h"
 
 session user = {false, "", ""};
-bool first = true;
 
 int main(int argc, char **argv) {
-    char buffer[BUFFER_SIZE + 1];
+    char buffer[BUFFER_SIZE+1];
     int socket_type;
     char port[6] = DEFAULT_PORT;
-    // char *port1 = "58010";
     char *asip = getIpAddress();
-    memset(buffer, 0, BUFFER_SIZE + 1);
+    memset(buffer, 0, BUFFER_SIZE+1);
     
     // Update ip and/or port 
     if (argc > 1) {
@@ -21,7 +19,6 @@ int main(int argc, char **argv) {
             // ip and port included
             if (argc == 5 && !strcmp(argv[3], "-p")) 
                 memcpy(port, argv[4], strlen(argv[4]) + 1);
-
         // port included first
         } else if (!strcmp(argv[1], "-p")) { 
             memcpy(port, argv[2], strlen(argv[2]) + 1);
@@ -32,46 +29,27 @@ int main(int argc, char **argv) {
             } 
         }
     }
-    printf("asip: %s\n", asip);
-    printf("port: %s\n", port);
-    
     while (true) {
-        if (first) { // devido ao select, pois estaria sempre a dar print "-> "
-            write(1, "-> ", 3);
-            first = false;
+        write(1, "-> ", 3);
+        memset(buffer, 0, BUFFER_SIZE);
+        fgets(buffer, BUFFER_SIZE, stdin);
+
+        // to be removed before submisson 
+        if (strcmp(buffer, "log\n") == 0) {
+            printf("%s", buffer);
+            sprintf(buffer, "login 104168 password\n");
         }
-        fd_set read_fds;
-        struct timeval timeout;
+        if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name assets/teste.png 12 12\n");
 
-        FD_ZERO(&read_fds);
-        FD_SET(STDIN_FILENO, &read_fds);
-        
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 100000; // 100ms
-
-        int ready = select(STDIN_FILENO + 1, &read_fds, NULL, NULL, &timeout);
-
-        if (ready > 0) {
-            if (FD_ISSET(STDIN_FILENO, &read_fds)) {
-                memset(buffer, 0, BUFFER_SIZE);
-                fgets(buffer, BUFFER_SIZE, stdin);
-
-                // to be removed before submisson 
-                //if (strcmp(buffer, "log\n") == 0) sprintf(buffer, "login 103624 password\n");
-                //printf("%s", buffer);
-
-                if (!is_input_valid(buffer, &socket_type, &user)) {
-                    printf("ERR: %s\n", buffer);
-                } else {
-                    if (strcmp(buffer, "EXT\n") == 0)  {
-                        if (user.logged == false) break;
-                        else puts("you need to logout before you exit");
-                    }
-                    else if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
-                    else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
-                }
-                first = true;
+        if (!is_input_valid(buffer, &socket_type, &user)) {
+            printf("ERR: %s\n", buffer);
+        } else {
+            if (strcmp(buffer, "EXT\n") == 0)  {
+                if (user.logged == false) break;
+                else puts("you need to logout before you exit");
             }
+            else if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
+            else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
         }
     }
     free(asip);
@@ -80,7 +58,6 @@ int main(int argc, char **argv) {
 void send_request_tcp(char *port, char *asip, char *buffer) {
     char cmd[4];
     int fd, errcode;
-    ssize_t n;
     struct addrinfo hints, *res;
 
     fd=socket(AF_INET,SOCK_STREAM,0); 
@@ -90,26 +67,18 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     hints.ai_family = AF_INET; // IPv4
     hints.ai_socktype = SOCK_STREAM; // TCP socket 
 
-    errcode = getaddrinfo(asip, port, &hints, &res);
+    errcode=getaddrinfo(asip,port,&hints,&res);
+    if(errcode!=0) exit(1);
 
-    if (errcode != 0) {
-        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(errcode));
-        exit(1);
-    }
-
-    n = connect(fd, res->ai_addr, res->ai_addrlen);
-    if (n == -1) {
-        perror("connect");
-        exit(1);
-    }
+    if (connect(fd,res->ai_addr,res->ai_addrlen) == -1) exit(1);
 
     sscanf(buffer, "%s", cmd);
     if (strcmp(cmd, "OPA") == 0) { // open msg
         send_open(buffer, fd);
     } else { // normal msg
-        n=write(fd, buffer, strlen(buffer));
-        if(n==-1) exit(1);
+        if (write(fd, buffer, strlen(buffer)) == -1) exit(1);
     }
+    puts(buffer);
     analyze_reply_tcp(buffer, fd);
     write(1,buffer,strlen(buffer));
     freeaddrinfo(res);
@@ -147,10 +116,10 @@ void send_request_udp(char *port, char *asip, char *buffer) {
 }
 
 void send_open(char *buffer, int fd) {
-    char name[MAX_NAME_DESC + 1];
-    char start_value[MAX_START_VAL + 1];
-    char timeactive[MAX_AUC_DURATION + 1];
-    char asset_fname[MAX_FILENAME];
+    char name[MAX_NAME_DESC+1];
+    char start_value[MAX_START_VAL+1];
+    char timeactive[MAX_AUC_DURATION+1];
+    char asset_fname[MAX_FILENAME+1];
     long size = 0;
 
     if (sscanf(buffer, "%*s %s %s %s %s %ld", name, start_value,

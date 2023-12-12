@@ -1,4 +1,4 @@
-#include "handle_requests.h"
+#include "requests.h"
 
 void ex_login(int fd, struct sockaddr_in addr, char *request);
 void ex_logout(int fd, struct sockaddr_in addr, char* msg);

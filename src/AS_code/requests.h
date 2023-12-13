@@ -5,7 +5,6 @@
 #include <netdb.h>
 #include <unistd.h>
 #include "../validations.h"
-#include "as.h"
 
 #define DEFAULT_PORT "58023"
 #define MAX_BUFFER_SIZE 128

@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <errno.h>
-#include "requests.h"
-#include <pthread.h>
+#include "as.h"
 
 #define DEFAULT_PORT "58023"
 

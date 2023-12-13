@@ -1,7 +1,5 @@
 #include "requests.h"
 #include "aux_executes.h"
-#include <stdio.h>
-#include <sys/select.h>
 
 void handle_requests(char *port) {
     int udp_socket, tcp_socket;
@@ -19,10 +17,8 @@ void handle_requests(char *port) {
     do_bind(tcp_socket, &tcp_addr);
 
     if (listen(tcp_socket, 5) == -1) {
-        perror("TCP listen");
-        exit(1);
+        perror("TCP listen"); exit(1);
     }
-
     while (true) {
         fd_set read_fds;
         int max_fd;
@@ -33,8 +29,7 @@ void handle_requests(char *port) {
 
         max_fd = (udp_socket > tcp_socket) ? udp_socket : tcp_socket;
         if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1) {
-            perror("select");
-            exit(1);
+            perror("select"); exit(1);
         }
         // Check UDP socket
         if (FD_ISSET(udp_socket, &read_fds)) {
@@ -53,7 +48,6 @@ int do_socket(int socket_type) {
     if (s == -1) {
         if (socket_type == SOCK_DGRAM) perror("UDP socket");
         else if (socket_type == SOCK_STREAM) perror("TCP socket");
-        puts("ERROR");
         exit(1);
     }
     return s;
@@ -68,8 +62,7 @@ void initialize_addr(struct sockaddr_in *addr, char *port) {
 
 void do_bind(int socket, struct sockaddr_in *addr) {
    if (bind(socket, (struct sockaddr*)addr, sizeof(*addr)) == -1) {
-        perror("bind error");
-        exit(1);
+        perror("Bind error"); exit(1);
     }
 }
 
@@ -109,7 +102,7 @@ void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr) {
         ssize_t n, total = 0;
         while (total < 3) { // cmd
             n = recv(new_tcp_socket, buffer + total, 1, 0);
-            if(n==-1)/*error*/exit(EXIT_FAILURE);
+            if(n==-1) exit(1);
             total += n;
         }
         buffer[total] = '\0';
@@ -168,7 +161,7 @@ void extract(char *src, int fd, int args) {
     ssize_t n = 0, total = 3; // 3 for cmd
     while(args == 0 || args > num_spaces) {
         n=recv(fd, src + total, 1, 0);
-        if(n==-1)/*error*/exit(EXIT_FAILURE);
+        if(n==-1) exit(1);
         total += n;
         src[total] = '\0';
         if (src[total-1] == ' ') {

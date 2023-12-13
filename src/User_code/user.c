@@ -38,8 +38,8 @@ int main(int argc, char **argv) {
 
         // to be removed before submisson 
         if (strcmp(buffer, "log\n") == 0) {
-            printf("%s", buffer);
             sprintf(buffer, "login 104168 password\n");
+            printf("%s", buffer);
         }
         if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name assets/teste.png 12 12\n");
 

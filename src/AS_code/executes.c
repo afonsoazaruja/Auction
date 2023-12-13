@@ -107,7 +107,7 @@ void ex_show_record(int fd, struct sockaddr_in addr, char *request) {
 
 void ex_open(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID+1];
-    char pwd[SIZE_PASSWORD+1];
+    char password[SIZE_PASSWORD+1];
     char name[MAX_NAME_DESC+1];
     char start_value[MAX_START_VAL+1];
     char timeactive[MAX_AUC_DURATION+1];
@@ -117,19 +117,18 @@ void ex_open(int fd, struct sockaddr_in addr, char *request) {
     char asset_dir[100];
     char aid[4];
 
-    sscanf(request, "%*s %s %s %s %s %s %s %ld", uid, pwd, name, start_value, timeactive, asset_fname, &size);
+    sscanf(request, "%*s %s %s %s %s %s %s %ld", uid, password, name,
+    start_value, timeactive, asset_fname, &size);
 
     build_path_user_dir(user_dir, uid);
     if (!is_logged_in(user_dir, uid)) {
         send_reply_to_user(fd, addr, "ROA NLG\n");
         return;
     }
-
     if (!is_open_valid(name, asset_fname, start_value, timeactive)) {
         send_reply_to_user(fd, addr, "ROA NOK\n");
         return;
     }
-
     num_aid++; format_aid(aid);
 
     register_auction(fd, addr, uid, name, asset_fname, start_value, timeactive, aid);
@@ -139,18 +138,16 @@ void ex_open(int fd, struct sockaddr_in addr, char *request) {
     char *data = malloc(size);
     FILE *file = fopen(asset_file, "wb");
     if (file == NULL) {
-        perror("Error opening file");
-        exit(EXIT_FAILURE);
+        perror("Error opening file"); exit(1);
     }
     ssize_t n = 0;
     do { // read bytes of file and write
-        n=recv(fd, data, size, 0);
-        if(n==-1)/*error*/exit(1);
+        recv(fd, data, size, 0);
+        if(n==-1) exit(1);
         size_t bytes_written = fwrite(data, 1, n, file);
         if (bytes_written != n) {
-            perror("Error writing to file");
             fclose(file);
-            exit(EXIT_FAILURE);
+            perror("Error writing to file"); exit(1);
         }
         size -= n;
     } while(size != 0);
@@ -179,10 +176,17 @@ void ex_show_asset(int fd, struct sockaddr_in addr, char *request) {
 
 void ex_bid(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID+1];
-    char pwd[SIZE_PASSWORD+1];
+    char password[SIZE_PASSWORD+1];
     char aid[MAX_STATUS_SIZE+1];
-    sscanf(request, "%*s %s %s %s", uid, pwd, aid);
+    char auction_dir[100];
+    int value;
 
-    // To do
-    send_reply_to_user(fd, addr, "TST NOP\n");
+    sscanf(request, "%*s %s %s %s %d", uid, password, aid, &value);
+    build_path_auction_dir(auction_dir, aid);
+
+    if (!is_auction_active(auction_dir, aid)) {
+        send_reply_to_user(fd, addr, "RBD NOK\n");
+        return;
+    }
+
 }

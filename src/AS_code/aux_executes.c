@@ -1,13 +1,9 @@
 #include "aux_executes.h"
 #include "../validations.h"
-#include <bits/types/cookie_io_functions_t.h>
-#include <netinet/in.h>
-#include <time.h>
-
 
 void send_reply_to_user(int fd, struct sockaddr_in addr, char *reply) {
-    int n = sendto(fd, reply, strlen(reply), 0, (struct sockaddr*)&addr, sizeof(addr));
-    if (n == -1) exit(1);   
+    if (sendto(fd, reply, strlen(reply), 0,
+    (struct sockaddr*)&addr, sizeof(addr)) == -1) exit(1);
 }
 
 void build_path_user_dir(char *path_user_dir, char *uid) {
@@ -46,10 +42,22 @@ bool is_registered(char *path_user_dir, char *uid) {
 bool is_logged_in(char *path_user_dir, char *uid) {
     char *login_file_name = get_file_name(path_user_dir, uid, "_login", ".txt");
     FILE *login_file = fopen(login_file_name, "r");
+
+    free(login_file_name);
     if (login_file == NULL) return false;
 
     fclose(login_file);
-    free(login_file_name);
+    return true;
+}
+
+bool is_auction_active(char *path_auction_dir, char *aid) {
+    char *end_file_name = get_file_name(path_auction_dir, "END_", aid, ".txt");
+    FILE *end_file = fopen(end_file_name, "r");
+    
+    free(end_file_name);
+    if (end_file == NULL) return true;
+
+    fclose(end_file);
     return true;
 }
 
@@ -84,7 +92,6 @@ void register_auction(int fd, struct sockaddr_in addr, char *uid, char *name, ch
             perror("Error creating directory auction"); exit(1);
         }
     }
-
     create_start_auction_file(auction_dir, uid, name, asset, start_value, timeactive, aid);
 
     build_auction_asset_dir(asset_dir, aid);
@@ -146,7 +153,8 @@ void create_login_file(char *uid, char *path_user_dir) {
     }
 }
 
-void create_start_auction_file(char *auction_dir, char *uid, char *name, char *asset, char *start_value, char *timeactive, char *aid) {
+void create_start_auction_file(char *auction_dir, char *uid, char *name, char *asset,
+char *start_value, char *timeactive, char *aid) {
     char *start_auction = get_file_name(auction_dir, "START_", aid, ".txt");
     FILE *start_file = fopen(start_auction, "w");
     time_t t;
@@ -170,6 +178,8 @@ bool is_correct_password(char *password, char *path_user_dir, char *uid) {
     char *pass_file_name = get_file_name(path_user_dir, uid, "_pass", ".txt");
     char correct_pass[SIZE_PASSWORD + 1];
     FILE *pass_file = fopen(pass_file_name, "r");
+    
+    free(pass_file_name);
 
     if (pass_file != NULL) {
         fgets(correct_pass, sizeof(correct_pass), pass_file);
@@ -177,7 +187,6 @@ bool is_correct_password(char *password, char *path_user_dir, char *uid) {
     } else {
         perror("Error opening file"); exit(1);
     }
-    free(pass_file_name);
     return false;
 }
 

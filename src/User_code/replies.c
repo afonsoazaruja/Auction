@@ -2,8 +2,8 @@
 #include "commands.h"
 
 void analyze_reply_udp(char *buffer) {
-    char type_reply[TYPE_REPLY_SIZE + 1];
-    char status[MAX_STATUS_SIZE + 1];
+    char type_reply[TYPE_REPLY_SIZE+1];
+    char status[MAX_STATUS_SIZE+1];
     if (sscanf(buffer, "%3s %3s", type_reply, status) != 2) exit(1); 
 
     if (!validate_buffer(buffer)) {

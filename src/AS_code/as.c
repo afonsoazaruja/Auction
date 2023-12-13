@@ -2,7 +2,6 @@
 
 #define DEFAULT_PORT "58023"
 
-int num_aid = 0;
 bool verbose = false;
 
 int main(int argc, char **argv) {

@@ -11,6 +11,7 @@
 #define CMD_SIZE 3
 #define MAX_STATUS_SIZE 3
 #define SIZE_PATH_USER_DIR 25
+#define MAX_NUM_AID 999
 
 void handle_requests(char *port);
 int do_socket(int socket_type);

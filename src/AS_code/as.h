@@ -6,7 +6,6 @@
 #include "requests.h"
 #include <pthread.h>
 
-extern int num_aid;
 extern bool verbose;
 
 #endif

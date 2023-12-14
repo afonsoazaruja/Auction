@@ -7,7 +7,7 @@ USER_DIR = User_code
 AS_SRCS = $(wildcard $(AS_DIR)/*.c) validations.c
 USER_SRCS = $(wildcard $(USER_DIR)/*.c) validations.c
 
-AS_TARGET = server
+AS_TARGET = AS
 USER_TARGET = user
 
 all: server user

@@ -38,12 +38,7 @@ void ex_logout(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RLO NOK\n");
     }
     else {
-        sprintf(login_file_name, "%s/%s/%s_login.txt", PATH_USERS_DIR, uid, uid);
-        if (remove(login_file_name) == 0) {
-            send_reply_to_user(fd, addr, "RLO OK\n");
-        } else {
-            perror("Error removing file"); exit(1);
-        }
+        logout(login_file_name, fd, addr, uid);
     }
 }
 
@@ -65,14 +60,7 @@ void ex_unregister(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RUR NOK\n");
     }
     else {
-        sprintf(login_file_name, "%s/%s/%s_login.txt", PATH_USERS_DIR, uid, uid);
-        sprintf(pass_file_name, "%s/%s/%s_pass.txt", PATH_USERS_DIR, uid, uid);
-
-        if (remove(login_file_name) == 0 && remove(pass_file_name) == 0) {
-            send_reply_to_user(fd, addr, "RUR OK\n");
-        } else {
-            perror("Error removing file"); exit(1);
-        }
+        unregister(login_file_name, pass_file_name, fd, addr, uid);
     }
 }
 
@@ -87,13 +75,7 @@ void ex_myauctions(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RMA NLG\n");
     }
     else {
-        char hosted_path[100];
-        sprintf(hosted_path, "%s/%s/HOSTED", PATH_USERS_DIR, uid);
-        char *auctions_list = create_list_auctions(hosted_path);
-
-        char reply[strlen(auctions_list) + 10];
-        sprintf(reply, "RMA OK %s\n", auctions_list);
-        send_reply_to_user(fd, addr, reply);
+        send_myauctions(fd, addr, uid);
     }
 }
 
@@ -108,20 +90,22 @@ void ex_mybids(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RMB NLG\n");
     }
     else {
-        char bidded_path[100];
-        sprintf(bidded_path, "%s/%s/BIDDED", PATH_USERS_DIR, uid);
-        char *auctions_list = create_list_auctions(bidded_path);
-
-        char reply[strlen(auctions_list) + 10];
-        sprintf(reply, "RMB OK %s\n", auctions_list);
-        send_reply_to_user(fd, addr, reply);
+        send_mybids(fd, addr, uid);
     }
 }
 
 void ex_list(int fd, struct sockaddr_in addr, char *request) {
-    // To do
-    send_reply_to_user(fd, addr, "TST NOP\n");
+    char *auctions_list = create_list_auctions(PATH_AUCTIONS_DIR);
+
+    // no auctions was yet started 
+    if (auctions_list[0] == '\0') {
+        send_reply_to_user(fd, addr, "RLS NOK\n");
+    }
+    else {
+        send_all_auctions(auctions_list, fd, addr);
+    }
 }
+
 void ex_show_record(int fd, struct sockaddr_in addr, char *request) {
     // To do
     send_reply_to_user(fd, addr, "TST NOP\n");

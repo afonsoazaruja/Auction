@@ -18,6 +18,9 @@ typedef struct {
 } Auction;
 
 void send_reply_to_user(int fd, struct sockaddr_in addr, char *reply);
+void send_myauctions(int fd, struct sockaddr_in addr, char *uid); 
+void send_mybids(int fd, struct sockaddr_in addr, char *uid);
+void send_all_auctions(char *auctions_list, int fd, struct sockaddr_in addr);
 
 bool is_correct_password(char *password, char *uid);
 bool is_registered(char *uid);
@@ -30,7 +33,10 @@ bool directoryExists(const char *path);
 bool has_started_auctions(char *uid);
 bool has_placed_bids(char *uid);
 
+void logout(char *login_file_name, int fd, struct sockaddr_in addr, char *uid);
+void unregister(char *login_file_name, char *pass_file_name, int fd, struct sockaddr_in addr, char *uid);
 void try_to_login(int fd, struct sockaddr_in addr, char *uid, char *password);
+
 void register_user(int fd, struct sockaddr_in addr, char *uid, char *password);
 void register_auction(int fd, struct sockaddr_in addr, char *uid, char *name, char *asset, char *start_value, char *timeactive, char *aid);
 void close_auction(char *aid);
@@ -43,5 +49,5 @@ char* create_list_auctions(char *path_dir);
 
 char *get_aid();
 Auction* get_auctions(const char *path_dir, size_t num_auctions);
-size_t get_num_files_in_dir(const char *path);
+size_t get_num_auctions_in_dir(const char *path);
 long get_file_size(char *fname);

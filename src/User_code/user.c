@@ -45,8 +45,8 @@ int main(int argc, char **argv) {
             sprintf(buffer, "login 102198 password\n");
             printf("%s", buffer);
         }
-        if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name assets/teste.png 12 12\n");
-        if (strcmp(buffer, "open2\n") == 0) sprintf(buffer, "open name assets/teste.png 15 15\n");
+        if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name Hispano-Suiza-K6.jpg 100 100\n");
+        if (strcmp(buffer, "open2\n") == 0) sprintf(buffer, "open name DaVinci_01,jpg 100 100\n");
         // ------------------------------------------------------------------------- //
 
         if (!is_input_valid(buffer, &socket_type, &user)) {

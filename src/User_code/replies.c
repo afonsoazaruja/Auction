@@ -56,7 +56,6 @@ void handle_auctions(char *list, char *buffer, char *type) {
         name, host_uid, start_date, start_time, timeactive, asset_fname, start_value);
 
         char *token = strtok(list, " ");
-
         while (token != NULL) {
             if (strcmp(token, "B") == 0) {
                 strcat(buffer, "┌\n│Bidder Name: "); 
@@ -86,34 +85,21 @@ void handle_auctions(char *list, char *buffer, char *type) {
         }      
     } else {
         char *token = strtok(list, " ");
-        char tmp[4];
-        if (strcmp(type, "RLS") == 0) {
-            strcat(buffer, "ACTIVE AUCTIONS:\n");
+        if ((strcmp(type, "RLS") == 0) || (strcmp(type, "RMA") == 0) || (strcmp(type, "RMB") == 0)) {
+            strcat(buffer, "AID ─ STATE\n");
             while (token != NULL) {
-                strcpy(tmp, token);
-                token = strtok(NULL, " ");
+                strcat(buffer, token); // AID
+                token = strtok(NULL, " "); // get STATE
                 if (token[0] == '1') {
-                    strcat(buffer, "AID: ");
-                    strcat(buffer, tmp);
-                    strcat(buffer, "\n");
+                    strcat(buffer, " ─ ACTIVE\n");
+                }
+                else if (token[0] == '0') {
+                    strcat(buffer, " ─ INACTIVE\n");
                 }
                 token = strtok(NULL, " ");
             }
             if (strlen(buffer) == 0) sprintf(buffer, "no auction was yet started\n");
         }    
-        else if ((strcmp(type, "RMA") == 0) || (strcmp(type, "RMB") == 0)) {
-            while (token != NULL) {
-                strcpy(tmp, token);
-                token = strtok(NULL, " ");
-                strcat(buffer, "AID: ");
-                strcat(buffer, tmp);
-                if (token[0] == '1')
-                    strcat(buffer, " ACTIVE\n");
-                else 
-                    strcat(buffer, " INACTIVE\n");
-                token = strtok(NULL, " ");
-            }
-        }
     }
 }
 
@@ -243,7 +229,7 @@ void reply_show_asset(char *status, char *buffer, int fd) {
         FILE *file = fopen(fname, "wb");
         if (file == NULL) {
             perror("Error opening file");
-            exit(EXIT_FAILURE);
+            exit(1);
         }
         do { // read bytes of file and write
             n=read(fd, data, size);
@@ -252,7 +238,7 @@ void reply_show_asset(char *status, char *buffer, int fd) {
             if (bytes_written != n) {
                 perror("Error writing to file");
                 fclose(file);
-                exit(EXIT_FAILURE);
+                exit(1);
             }
             size -= n;
         } while(size != 0);
@@ -284,7 +270,7 @@ void extract(char *src, char *dst, int fd) {
     memset(src, 0, BUFFER_SIZE);
     while(true) {
         n=read(fd, src, 1);
-        if(n==-1)/*error*/exit(EXIT_FAILURE);
+        if(n==-1) exit(1);
         if (src[0] == ' ' || src[0] == '\n') break;
         src[n] = '\0';
         strcat(dst, src);

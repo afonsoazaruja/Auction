@@ -41,7 +41,13 @@ int main(int argc, char **argv) {
             sprintf(buffer, "login 104168 password\n");
             printf("%s", buffer);
         }
+        if (strcmp(buffer, "log2\n") == 0) {
+            sprintf(buffer, "login 102198 password\n");
+            printf("%s", buffer);
+        }
         if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name assets/teste.png 12 12\n");
+        if (strcmp(buffer, "open2\n") == 0) sprintf(buffer, "open name assets/teste.png 15 15\n");
+        // ------------------------------------------------------------------------- //
 
         if (!is_input_valid(buffer, &socket_type, &user)) {
             printf("ERR: %s\n", buffer);

@@ -1,5 +1,7 @@
 #include "aux_executes.h"
 #include "../validations.h"
+#include <linux/limits.h>
+#include <stdio.h>
 
 char dir[100];
 
@@ -127,7 +129,7 @@ char *get_aid() {
     dir = opendir(AUCTIONS_DIR);
     if (dir == NULL) {
         perror("opendir");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_DIR && strlen(entry->d_name) == 3) {
@@ -175,7 +177,9 @@ void create_login_file(char *uid) {
     }
 }
 
-void create_start_auction_file(char *uid, char *name, char *asset, char *start_value, char *timeactive, char *aid) {
+void create_start_auction_file(char *uid, char *name, char *asset,
+ char *start_value, char *timeactive, char *aid) 
+{
     sprintf(dir, "%s/%s/START_%s.txt", AUCTIONS_DIR, aid, aid);
     FILE *start_file = fopen(dir, "w");
     time_t t;
@@ -194,7 +198,7 @@ void create_start_auction_file(char *uid, char *name, char *asset, char *start_v
 }
 
 bool is_correct_password(char *password, char *uid) {
-    char correct_pass[SIZE_PASSWORD + 1];
+    char correct_pass[SIZE_PASSWORD+1];
     sprintf(dir, "%s/%s/%s_pass.txt", USERS_DIR, uid, uid);
     FILE *pass_file = fopen(dir, "r");
 
@@ -204,5 +208,86 @@ bool is_correct_password(char *password, char *uid) {
     } else {
         perror("Error opening file"); exit(1);
     }
+    return false;
+}
+
+bool is_auct_hosted_by_user(char *aid, char *uid) {
+    char auction_file_name[32];
+    sprintf(auction_file_name, "%s/%s/HOSTED/%s.txt", USERS_DIR, uid, aid);
+    
+    if (fopen(auction_file_name, "r") == NULL) return false;
+    return true;
+}
+
+bool is_bid_too_small(char *aid, int bid_value) {
+    char bids_dir_name[100];
+    DIR *bids_dir;
+    struct dirent *entry;
+    char val[7];
+
+    sprintf(bids_dir_name, "%s/%s/BIDS", AUCTIONS_DIR, aid);
+
+    bids_dir = opendir(bids_dir_name);
+    if (bids_dir == NULL) {
+        perror("Unable to open directory"); exit(1);
+    }
+    // Iterate through each entry in the directory
+    while ((entry = readdir(bids_dir)) != NULL) {
+        // Skip current and parent directories
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        for (int i=0; i<strlen(entry->d_name); i++) {
+            // stop at .txt
+            if (entry->d_name[i] == '.') break;
+            val[i] = entry->d_name[i+4];
+        }
+        if (atoi(val) > bid_value)  {
+            closedir(bids_dir);
+            return true;
+        }    
+    }
+    closedir(bids_dir);
+    return false;
+}
+
+void create_bid(char *aid, char *uid, int value) {
+    char bid_fname[100];
+    char bidded_auct_fname[100];
+
+    sprintf(bid_fname, "%s/%s/BIDS/%s_%d.txt", AUCTIONS_DIR, aid, aid, value);
+    sprintf(bidded_auct_fname, "%s/%s/BIDDED/%s.txt", USERS_DIR, uid, aid);
+
+    FILE *bidded_auct_file = fopen(bidded_auct_fname, "w");
+    if (bidded_auct_file == NULL) {
+        perror("Error opening file in BIDDED"); exit(1);
+    }
+    FILE *bid_file = fopen(bid_fname, "w");
+    if (bid_file == NULL) {
+        perror("Error opening file in BIDS"); exit(1);
+    } 
+    fclose(bidded_auct_file);
+    fclose(bid_file);
+}
+
+bool has_placed_bids(char *uid) {
+    char bidded_path[100];
+    DIR *bidded_dir;
+    struct dirent *entry;
+
+    sprintf(bidded_path, "%s/%s/BIDDED", USERS_DIR, uid);
+
+    bidded_dir = opendir(bidded_path);
+    if (bidded_dir == NULL) {
+        perror("Unable to open directory"); exit(1);
+    }
+    while ((entry = readdir(bidded_dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        // has files besides current and parent directories
+        return true;
+    }
+    closedir(bidded_dir);
     return false;
 }

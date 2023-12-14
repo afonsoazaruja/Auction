@@ -161,7 +161,7 @@ void reply_myauctions(char *status, char *buffer) {
 
 void reply_mybids(char *status, char *buffer) {
     if (strcmp(status, "NOK") == 0) {
-        sprintf(buffer, "user has no ongoing bids\n");
+        sprintf(buffer, "user has not placed any bids\n");
     } else if (strcmp(status, "NLG") == 0) {
         sprintf(buffer, "user not logged in\n");
     } 

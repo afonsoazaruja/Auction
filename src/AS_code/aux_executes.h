@@ -22,3 +22,7 @@ void create_login_file(char *uid);
 void create_pass_file(char *uid, char *password);
 void create_start_auction_file(char *uid, char *name, char *asset, char *start_value, char *timeactive, char *aid);
 char *get_file_name(char *path_user_dir, char *first, char *second, char *third);
+bool is_auct_hosted_by_user(char *aid, char *uid);
+bool is_bid_too_small(char *aid, int bid_value);
+void create_bid(char *aid, char *uid, int value);
+bool has_placed_bids(char *uid);

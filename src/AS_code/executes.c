@@ -23,55 +23,55 @@ void ex_login(int fd, struct sockaddr_in addr, char *request) {
 void ex_logout(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID + 1];
     char password[SIZE_PASSWORD + 1];
-    char dir[100];
+    char login_file_name[100];
 
     if (sscanf(request, "%*s %s %s", uid, password) != 2) exit(1);
+
     if (!is_UID(uid) || !is_password(password) || !validate_buffer(request)) {
         send_reply_to_user(fd, addr, "RLO ERR\n");
-        return;
     }
-    if (!is_registered(uid)) {
+    else if (!is_registered(uid)) {
         send_reply_to_user(fd, addr, "RLO UNR\n");
-        return;
     }
     else if (!is_logged_in(uid)) {
         send_reply_to_user(fd, addr, "RLO NOK\n");
-        return;
     }
-    sprintf(dir, "%s/%s/%s_login.txt", USERS_DIR, uid, uid);
-    if (remove(dir) == 0) {
-        send_reply_to_user(fd, addr, "RLO OK\n");
-    } else {
-        perror("Error removing file"); exit(1);
+    else {
+        sprintf(login_file_name, "%s/%s/%s_login.txt", USERS_DIR, uid, uid);
+        if (remove(login_file_name) == 0) {
+            send_reply_to_user(fd, addr, "RLO OK\n");
+        } else {
+            perror("Error removing file"); exit(1);
+        }
     }
 }
 
 void ex_unregister(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID + 1];
     char password[SIZE_PASSWORD + 1];
-    char login_dir[100];
-    char pass_dir[100];
+    char login_file_name[100];
+    char pass_file_name[100];
 
     if (sscanf(request, "%*s %s %s", uid, password) != 2) exit(1);
+
     if (!is_UID(uid) || !is_password(password) || !validate_buffer(request)) {
         send_reply_to_user(fd, addr, "RUR ERR\n");
-        return;
     }    
-    if (!is_registered(uid)) {
+    else if (!is_registered(uid)) {
         send_reply_to_user(fd, addr, "RUR UNR\n");
-        return;
     }
     else if (!is_logged_in(uid)) {
         send_reply_to_user(fd, addr, "RUR NOK\n");
-        return;
     }
+    else {
+        sprintf(login_file_name, "%s/%s/%s_login.txt", USERS_DIR, uid, uid);
+        sprintf(pass_file_name, "%s/%s/%s_pass.txt", USERS_DIR, uid, uid);
 
-    sprintf(login_dir, "%s/%s/%s_login.txt", USERS_DIR, uid, uid);
-    sprintf(pass_dir, "%s/%s/%s_pass.txt", USERS_DIR, uid, uid);
-    if (remove(login_dir) == 0 && remove(pass_dir) == 0) {
-       send_reply_to_user(fd, addr, "RUR OK\n");
-    } else {
-        perror("Error removing file"); exit(1);
+        if (remove(login_file_name) == 0 && remove(pass_file_name) == 0) {
+            send_reply_to_user(fd, addr, "RUR OK\n");
+        } else {
+            perror("Error removing file"); exit(1);
+        }
     }
 }
 
@@ -79,10 +79,19 @@ void ex_myauctions(int fd, struct sockaddr_in addr, char *request) {
     // To do
     send_reply_to_user(fd, addr, "TST NOP\n");
 }
+
 void ex_mybids(int fd, struct sockaddr_in addr, char *request) {
-    // To do
-    send_reply_to_user(fd, addr, "TST NOP\n");
+    char uid[SIZE_UID+1];
+    sscanf(request, "%*s %s", uid);
+
+    if (!has_placed_bids(uid)) {
+        send_reply_to_user(fd, addr, "RMB NOK\n");
+    }
+    else if (!is_logged_in(uid)) {
+        send_reply_to_user(fd, addr, "RMB NLG\n");
+    }
 }
+
 void ex_list(int fd, struct sockaddr_in addr, char *request) {
     // To do
     send_reply_to_user(fd, addr, "TST NOP\n");
@@ -107,7 +116,6 @@ void ex_open(int fd, struct sockaddr_in addr, char *request) {
         free(aid); send_reply_to_user(fd, addr, "ROA NOK\n"); 
         return;
     }
-
     sscanf(request, "%*s %s %s %s %s %s %s %ld", uid, password, name,
     start_value, timeactive, asset_fname, &size);
 
@@ -117,7 +125,6 @@ void ex_open(int fd, struct sockaddr_in addr, char *request) {
     if (!is_open_valid(name, asset_fname, start_value, timeactive)) {
         send_reply_to_user(fd, addr, "ROA NOK\n"); return;
     }
-
     register_auction(fd, addr, uid, name, asset_fname, start_value, timeactive, aid);
     // asset
     sprintf(asset_dir, "%s/%s/ASSET/%s", AUCTIONS_DIR, aid, asset_fname);
@@ -136,7 +143,7 @@ void ex_open(int fd, struct sockaddr_in addr, char *request) {
             perror("Error writing to file"); exit(1);
         }
         size -= n;
-    } while(size != 0);
+    } while (size != 0);
 
     sprintf(request, "ROA OK %s\n", aid);
     free(aid);
@@ -190,9 +197,19 @@ void ex_bid(int fd, struct sockaddr_in addr, char *request) {
     
     if (!is_auction_active(aid)) {
         send_reply_to_user(fd, addr, "RBD NOK\n");
-        return;
+    }
+    else if (!is_logged_in(uid)) {
+        send_reply_to_user(fd, addr, "RBD NLG\n");
+    }
+    else if (is_auct_hosted_by_user(aid, uid)) {
+        send_reply_to_user(fd, addr, "RBD ILG\n");
+    }
+    else if (is_bid_too_small(aid, value)) {
+        send_reply_to_user(fd, addr, "RBD REF\n");
+    }
+    else {
+        create_bid(aid, uid, value);
+        send_reply_to_user(fd, addr, "RBD ACC\n");
     }
 
-    // To do
-    send_reply_to_user(fd, addr, "TST NOP\n");
 }

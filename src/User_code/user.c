@@ -123,25 +123,20 @@ void send_request_udp(char *port, char *asip, char *buffer) {
 }
 
 void send_open(char *buffer, int fd) {
-    char name[MAX_NAME_DESC+1];
-    char start_value[MAX_START_VAL+1];
-    char timeactive[MAX_AUC_DURATION+1];
     char asset_fname[MAX_FILENAME+1];
+    char asset_dir[14+MAX_FILENAME+1];
     long size = 0;
 
-    if (sscanf(buffer, "%*s %s %s %s %s %ld", name, start_value,
-     timeactive, asset_fname, &size) != 5) exit(1);
-
-    int asset_fd = open(asset_fname, O_RDONLY);
+    if (sscanf(buffer, "%*s %*s %*s %*s %*s %*s %s %ld", asset_fname, &size) != 2) exit(1);
+    
+    sprintf(asset_dir, "%s/%s", ASSET_DIR, asset_fname);
+    int asset_fd = open(asset_dir, O_RDONLY);
     if (asset_fd == -1) {
         perror("Error opening file"); exit(1);
     }
-    char *fname = get_file_name(asset_fname);
-    
-    sprintf(buffer, "OPA %s %s %s %s %s %s %ld ", user.UID, user.password, name, start_value, timeactive, fname, size);    
-    free(fname);
+    puts(buffer);    
     if (write(fd, buffer, strlen(buffer)) == -1) exit(1);
-    
+
     off_t offset = 0;
     while (size > 0) {
         ssize_t sent_bytes = sendfile(fd, asset_fd, &offset, size);

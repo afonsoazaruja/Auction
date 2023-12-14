@@ -101,26 +101,25 @@ bool handle_open(char *buffer, struct session *user) {
     char start_value[MAX_START_VAL+1];
     char timeactive[MAX_AUC_DURATION+1];
     char asset_fname[MAX_FILENAME+1];
+    char asset_dir[14+MAX_FILENAME+1];
 
     if (sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
         start_value, timeactive) != 4) {
             sprintf(buffer, "invalid data for open");
             return false;
     }
-    char *fname = get_file_name(asset_fname);
-    if (!is_open_valid(name, fname, start_value, timeactive)) {
-        free(fname);
+    if (!is_open_valid(name, asset_fname, start_value, timeactive)) {
         sprintf(buffer, "invalid data for open");
         return false;
     } else {
-        long size = get_file_size(asset_fname);
+        sprintf(asset_dir, "%s/%s", ASSET_DIR, asset_fname);
+        long size = get_file_size(asset_dir);
         if (size > MAX_FILESIZE) {
             sprintf(buffer, "image too big");
-            free(fname);
             return false;
         }
-        sprintf(buffer, "OPA %s %s %s %s %ld", name, start_value, timeactive, asset_fname, size);
-        free(fname);
+        sprintf(buffer, "OPA %s %s %s %s %s %s %ld ", 
+        user->UID, user->password, name, start_value, timeactive, asset_fname, size);
     }
     return true;               
 }

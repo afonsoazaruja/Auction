@@ -215,9 +215,10 @@ void reply_close(char *status, char *buffer) {
 void reply_show_asset(char *status, char *buffer, int fd) {
     if (strcmp(status, "OK") == 0) {
         ssize_t n = 0;
-        char fname[12 + MAX_FILENAME + 1] = "";
+        char asset_dir[14+MAX_FILENAME+1];
+        char fname[MAX_FILENAME+1] = "";
         char *endptr = "";
-        char fsize[8 + 1] = ""; // 10*10⁶ (8 digitos)
+        char fsize[8+1] = ""; // 10*10⁶ (8 digitos)
         long size = 0;
 
         memset(buffer, 0, BUFFER_SIZE);
@@ -226,7 +227,8 @@ void reply_show_asset(char *status, char *buffer, int fd) {
         
         size = strtol(fsize, &endptr, 10);
         char *data = malloc(size);
-        FILE *file = fopen(fname, "wb");
+        sprintf(asset_dir, "%s/%s", SA_DIR, fname);
+        FILE *file = fopen(asset_dir, "wb");
         if (file == NULL) {
             perror("Error opening file");
             exit(1);

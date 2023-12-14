@@ -9,8 +9,8 @@
 #include <linux/limits.h>
 #include <stdio.h>
 
-#define PATH_USERS_DIR "../../ASDIR/USERS"
-#define PATH_AUCTIONS_DIR "../../ASDIR/AUCTIONS"
+#define PATH_USERS_DIR "../ASDIR/USERS"
+#define PATH_AUCTIONS_DIR "../ASDIR/AUCTIONS"
 
 typedef struct {
     char aid[4];

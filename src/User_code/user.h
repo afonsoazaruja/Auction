@@ -15,8 +15,8 @@
 
 #define DEFAULT_PORT "58023" // 58000 + 23
 #define BUFFER_SIZE 7000
-#define ASSET_DIR "../../ASSETS"
-#define SA_DIR "../../SA"
+#define ASSET_DIR "../ASSETS"
+#define SA_DIR "../SA"
 
 int main(int argc, char **argv);
 void send_request_udp(char *port, char *asip, char *buffer);

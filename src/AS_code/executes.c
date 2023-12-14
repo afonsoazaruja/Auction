@@ -207,8 +207,6 @@ void ex_close(int fd, struct sockaddr_in addr, char *request) {
 }
 
 void ex_show_asset(int fd, struct sockaddr_in addr, char *request) {
-    DIR *dir;
-    struct dirent *entry;
     char aid[MAX_STATUS_SIZE+1], directory[100], asset_fname[MAX_FILENAME], reply[MAX_BUFFER_SIZE];
     ssize_t size;
     sscanf(request, "%*s %s", aid);
@@ -249,7 +247,6 @@ void ex_bid(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID+1];
     char password[SIZE_PASSWORD+1];
     char aid[MAX_STATUS_SIZE+1];
-    char auction_dir[100];
     int value;
 
     sscanf(request, "%*s %s %s %s %d", uid, password, aid, &value);

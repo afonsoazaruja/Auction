@@ -1,4 +1,0 @@
-./user -n 193.136.138.142 -p 58011
-login 104198 password
-open name assets/teste.png 12 123
-

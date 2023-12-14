@@ -4,8 +4,6 @@
 void handle_requests(char *port) {
     int udp_socket, tcp_socket;
     struct sockaddr_in udp_addr, tcp_addr;
-    socklen_t udp_addrlen, tcp_addrlen;
-    char buffer[MAX_BUFFER_SIZE];
 
     udp_socket = do_socket(SOCK_DGRAM);
     tcp_socket = do_socket(SOCK_STREAM);

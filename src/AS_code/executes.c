@@ -201,7 +201,7 @@ void ex_bid(int fd, struct sockaddr_in addr, char *request) {
     else if (!is_logged_in(uid)) {
         send_reply_to_user(fd, addr, "RBD NLG\n");
     }
-    else if (is_auct_hosted_by_user(aid, uid)) {
+    else if (is_auction_owned(uid, aid)) {
         send_reply_to_user(fd, addr, "RBD ILG\n");
     }
     else if (is_bid_too_small(aid, value)) {

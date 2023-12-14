@@ -27,11 +27,23 @@ bool is_logged_in(char *uid) {
 }
 
 bool is_auction_active(char *aid) {
+    long fulltime, timeactive;
+
     sprintf(dir, "%s/%s/END_%s.txt", AUCTIONS_DIR, aid, aid);
     FILE *end_file = fopen(dir, "r");
-    if (end_file == NULL) return true;
+    if (end_file == NULL) {
+        sprintf(dir, "%s/%s/START_%s.txt", AUCTIONS_DIR, aid, aid);
+        FILE *start_file = fopen(dir, "r");
+        fscanf(start_file, "%*s %*s %*s %*s %ld %*s %*s %ld", &timeactive, &fulltime);
+        time_t t;
+        if (time(&t) - fulltime > timeactive) {            
+            create_end_auction_file(aid, t);
+            return false;
+        }
+    }
     fclose(end_file);
-    return false;
+    return true;
+    
 }
 
 bool is_auction_owned(char *uid, char *aid) {
@@ -184,11 +196,25 @@ void create_start_auction_file(char *uid, char *name, char *asset,
     FILE *start_file = fopen(dir, "w");
     time_t t;
     struct tm *current_time;
-    time(&t);
     current_time = gmtime(&t);
 
     if (start_file != NULL) {
         fprintf(start_file, "%s %s %s %s %s %4d-%02d-%02d %02d:%02d:%02d %ld", uid, name, asset, start_value, timeactive, 
+        current_time->tm_year+1900, current_time->tm_mon+1, current_time->tm_mday,
+        current_time->tm_hour, current_time->tm_min, current_time->tm_sec, time(&t));
+        fclose(start_file);
+    } else {
+        perror("Error opening file"); exit(1);
+    }
+}
+
+void create_end_auction_file(char *aid, time_t t) {
+    char dir[38];
+    struct tm *current_time; current_time = gmtime(&t);
+    sprintf(dir, "%s/%s/END_%s.txt", AUCTIONS_DIR, aid, aid);
+    FILE *start_file = fopen(dir, "w");
+    if (start_file != NULL) {
+        fprintf(start_file, "%4d-%02d-%02d %02d:%02d:%02d %ld", 
         current_time->tm_year+1900, current_time->tm_mon+1, current_time->tm_mday,
         current_time->tm_hour, current_time->tm_min, current_time->tm_sec, time(&t));
         fclose(start_file);
@@ -209,14 +235,6 @@ bool is_correct_password(char *password, char *uid) {
         perror("Error opening file"); exit(1);
     }
     return false;
-}
-
-bool is_auct_hosted_by_user(char *aid, char *uid) {
-    char auction_file_name[32];
-    sprintf(auction_file_name, "%s/%s/HOSTED/%s.txt", USERS_DIR, uid, aid);
-    
-    if (fopen(auction_file_name, "r") == NULL) return false;
-    return true;
 }
 
 bool is_bid_too_small(char *aid, int bid_value) {

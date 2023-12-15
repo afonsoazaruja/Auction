@@ -18,25 +18,15 @@ void handle_requests(char *port) {
         perror("TCP listen"); exit(1);
     }
     while (true) {
-        fd_set read_fds;
-        int max_fd;
-
-        FD_ZERO(&read_fds);
-        FD_SET(udp_socket, &read_fds);
-        FD_SET(tcp_socket, &read_fds);
-
-        max_fd = (udp_socket > tcp_socket) ? udp_socket : tcp_socket;
-        if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1) {
-            perror("select"); exit(1);
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork protocols");
+            exit(1);
         }
-        // Check UDP socket
-        if (FD_ISSET(udp_socket, &read_fds)) {
-            handle_udp_socket(udp_socket, udp_addr);
-        }
-        // Check TCP socket
-        if (FD_ISSET(tcp_socket, &read_fds)) {
-            handle_tcp_socket(tcp_socket, tcp_addr);
-        }
+        // Check UDP socket (child)
+        if (pid == 0) handle_udp_socket(udp_socket, udp_addr);
+        // Check TCP socket (parent)
+        else handle_tcp_socket(tcp_socket, tcp_addr);
     }
 }
 
@@ -97,15 +87,22 @@ void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr) {
         perror("TCP accept");
     }
     else {
-        ssize_t n, total = 0;
-        while (total < 3) { // cmd
-            n = recv(new_tcp_socket, buffer + total, 1, 0);
-            if(n==-1) exit(1);
-            total += n;
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork tcp");
+            exit(1);
         }
-        buffer[total] = '\0';
-        execute_request_tcp(new_tcp_socket, tcp_addr, buffer);
-        close(new_tcp_socket);
+        if (pid == 0) { // child
+            ssize_t n, total = 0;
+            while (total < 3) { // cmd
+                n = recv(new_tcp_socket, buffer + total, 1, 0);
+                if(n==-1) exit(1);
+                total += n;
+            }
+            buffer[total] = '\0';
+            execute_request_tcp(new_tcp_socket, tcp_addr, buffer);
+            close(new_tcp_socket);
+        } // parent continues?
     }
 }
     

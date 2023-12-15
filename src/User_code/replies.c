@@ -168,8 +168,8 @@ void reply_show_record(char *status, char *buffer, const char *list) {
 void analyze_reply_tcp(char *buffer, int fd) {
     char type_reply[4] = "";
     char status[4] = "";
-    extract(buffer, type_reply, fd);    
-    extract(buffer, status, fd);         
+    extract(buffer, type_reply, fd);
+    extract(buffer, status, fd);
 
     if (strcmp(type_reply, "ROA") == 0) { 
        reply_open(status, buffer, fd);

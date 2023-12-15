@@ -11,10 +11,10 @@ void ex_login(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RLI ERR\n");
         return;
     }
-    // if (is_logged_in(uid)) {
-    //     send_reply_to_user(fd, addr, "user already logged in\n");
-    //     return;
-    // }
+    if (is_logged_in(uid)) {
+        send_reply_to_user(fd, addr, "user already logged in\n");
+        return;
+    }
     if (is_registered(uid)) 
         try_to_login(fd, addr, uid, password);
     else 
@@ -119,45 +119,27 @@ void ex_open(int fd, struct sockaddr_in addr, char *request) {
     char timeactive[MAX_AUC_DURATION+1];
     char asset_fname[MAX_FILENAME+1];
     long size = 0;
-    char asset_dir[100];
     char *aid = get_aid();
 
-    if (strcmp(aid, "000") == 0) {
-        free(aid); send_reply_to_user(fd, addr, "ROA NOK\n"); 
-        return;
-    }
     sscanf(request, "%*s %s %s %s %s %s %s %ld", uid, password, name,
     start_value, timeactive, asset_fname, &size);
 
-    if (!is_logged_in(uid)) {
-        send_reply_to_user(fd, addr, "ROA NLG\n"); return;
+    if (strcmp(aid, "000") == 0) {
+        send_reply_to_user(fd, addr, "ROA NOK\n"); 
     }
-    if (!is_open_valid(name, asset_fname, start_value, timeactive)) {
-        send_reply_to_user(fd, addr, "ROA NOK\n"); return;
+    else if (!is_logged_in(uid) || !is_correct_password(password, uid)) {
+        send_reply_to_user(fd, addr, "ROA NLG\n");
     }
-    register_auction(fd, addr, uid, name, asset_fname, start_value, timeactive, aid);
-    // asset
-    sprintf(asset_dir, "%s/%s/ASSET/%s", PATH_AUCTIONS_DIR, aid, asset_fname);
-    char *data = malloc(size);
-    FILE *file = fopen(asset_dir, "wb");
-    if (file == NULL) {
-        perror("Error opening file"); fclose(file); exit(1);
+    else if (!is_open_valid(name, asset_fname, start_value, timeactive)) {
+        send_reply_to_user(fd, addr, "ROA NOK\n");
     }
-    ssize_t n = 0;
-    do { // read bytes of file and write
-        n = recv(fd, data, size, 0);
-        if(n==-1) exit(1);
-        size_t bytes_written = fwrite(data, 1, n, file);
-        if (bytes_written != n) {
-            perror("Error writing to file"); fclose(file); exit(1);
-        }
-        size -= n;
-    } while (size != 0);
-
-    sprintf(request, "ROA OK %s\n", aid);
-    send_reply_to_user(fd, addr, request);
+    else {
+        register_auction(fd, addr, uid, name, asset_fname, start_value, timeactive, aid);  
+        receive_asset(fd, addr, aid, asset_fname, size);
+        sprintf(request, "ROA OK %s\n", aid);
+        send_reply_to_user(fd, addr, request);
+    }
     free(aid);
-    fclose(file);
 }
 
 void ex_close(int fd, struct sockaddr_in addr, char *request) {
@@ -185,46 +167,24 @@ void ex_close(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RCL END\n"); 
     }
     else {
-        close_auction(aid);
+        close_auction(aid, 0, time(NULL));
         send_reply_to_user(fd, addr, "RCL OK\n");
     }
 }
 
 void ex_show_asset(int fd, struct sockaddr_in addr, char *request) {
-    char aid[MAX_STATUS_SIZE+1], directory[100], asset_fname[MAX_FILENAME], reply[MAX_BUFFER_SIZE];
-    ssize_t size;
+    char aid[MAX_STATUS_SIZE+1], directory[100];
+    
     sscanf(request, "%*s %s", aid);
     
     sprintf(directory, "%s/%s", PATH_AUCTIONS_DIR, aid);
     if (!directoryExists(directory)) {
-        send_reply_to_user(fd, addr, "RSA NOK\n"); return;
+        send_reply_to_user(fd, addr, "RSA NOK\n");
     }
-    // read START_aid.txt for asset name
-    sprintf(directory, "%s/%s/START_%s.txt", PATH_AUCTIONS_DIR, aid, aid);
-    FILE *start_file = fopen(directory, "r");
-    if (start_file != NULL) {
-        fscanf(start_file, "%*s %*s %s", asset_fname);
-        fclose(start_file);
-    } else {
-        perror("Error opening file"); exit(1);
-        send_reply_to_user(fd, addr, "RSA NOK\n"); return;
+    else {
+        send_asset(fd, addr, aid);
+        send_reply_to_user(fd, addr, "\n");
     }
-    // send asset
-    sprintf(directory, "%s/%s/ASSET/%s", PATH_AUCTIONS_DIR, aid, asset_fname);
-    size = get_file_size(directory);
-    int asset_fd = open(directory, O_RDONLY);
-
-    sprintf(reply, "RSA OK %s %ld ", asset_fname, size);
-    send_reply_to_user(fd, addr, reply);
-    off_t offset = 0;
-    while (size > 0) {
-        ssize_t sent_bytes = sendfile(fd, asset_fd, &offset, size);
-        if (sent_bytes == -1) {
-            perror("Error sending file"); exit(1);
-        }
-        size -= sent_bytes;
-    }
-    send_reply_to_user(fd, addr, "\n");
 }
 
 void ex_bid(int fd, struct sockaddr_in addr, char *request) {

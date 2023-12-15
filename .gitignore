@@ -53,5 +53,5 @@ dkms.conf
 
 #
 *.vscode
-src/server
+src/AS
 src/user

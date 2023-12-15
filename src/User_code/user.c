@@ -45,8 +45,8 @@ int main(int argc, char **argv) {
             sprintf(buffer, "login 102198 password\n");
             printf("%s", buffer);
         }
-        if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name Hispano-Suiza-K6.jpg 100 100\n");
-        if (strcmp(buffer, "open2\n") == 0) sprintf(buffer, "open name DaVinci_01,jpg 100 100\n");
+        if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name Hispano-Suiza-K6.jpg 100 15\n");
+        if (strcmp(buffer, "open2\n") == 0) sprintf(buffer, "open name DaVinci_01.jpg 100 30\n");
         // ------------------------------------------------------------------------- //
 
         if (!is_input_valid(buffer, &socket_type, &user)) {
@@ -134,7 +134,6 @@ void send_open(char *buffer, int fd) {
     if (asset_fd == -1) {
         perror("Error opening file"); exit(1);
     }
-    puts(buffer);    
     if (write(fd, buffer, strlen(buffer)) == -1) exit(1);
 
     off_t offset = 0;

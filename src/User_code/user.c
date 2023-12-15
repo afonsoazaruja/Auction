@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
             } 
         }
     }
-    printf("> asip: %s\n> port: %s\n", asip, port);
+    printf("> asip: %s\n> port: %s\n", asip, port);    
 
     while (true) {
         write(1, "-> ", 3);
@@ -68,8 +68,8 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     int fd, errcode;
     struct addrinfo hints, *res;
 
-    fd=socket(AF_INET,SOCK_STREAM,0); 
-    if (fd==-1) exit(1); 
+    fd=socket(AF_INET,SOCK_STREAM,0);
+    if (fd==-1) { perror("TCP socket");exit(1);} 
 
     memset(&hints,0,sizeof hints);
     hints.ai_family = AF_INET; // IPv4
@@ -78,7 +78,10 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     errcode=getaddrinfo(asip,port,&hints,&res);
     if(errcode!=0) exit(1);
 
-    if (connect(fd,res->ai_addr,res->ai_addrlen) == -1) exit(1);
+    if (connect(fd,res->ai_addr,res->ai_addrlen) == -1) {
+        printf("Coud not connect to Auction Server\n");
+        return;
+    }
 
     sscanf(buffer, "%s", cmd);
     if (strcmp(cmd, "OPA") == 0) { // open msg
@@ -86,6 +89,7 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     } else { // normal msg
         if (write(fd, buffer, strlen(buffer)) == -1) exit(1);
     }
+    set_timeout(fd);
     analyze_reply_tcp(buffer, fd);
     write(1,buffer,strlen(buffer));
     freeaddrinfo(res);
@@ -112,8 +116,13 @@ void send_request_udp(char *port, char *asip, char *buffer) {
     if (n == -1) exit(1);
 
     addrlen = sizeof(addr);
+    set_timeout(fd);
+
     n = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addr, &addrlen);
-    if (n == -1) exit(1);
+    if (n == -1) {
+        printf("Connection lost\n"); close(fd);
+        return;
+    }
     buffer[n] = '\0';
 
     analyze_reply_udp(buffer);
@@ -176,4 +185,16 @@ char* getIpAddress() {
         freeaddrinfo(res);
     }
     return ipAddress;
+}
+
+void set_timeout(int fd) {
+    struct timeval timeout;
+    timeout.tv_sec = TIMEOUT;
+    timeout.tv_usec = 0;
+
+    if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+        perror("Error setting socket options");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
 }

@@ -17,8 +17,8 @@ void handle_requests(char *port) {
     if (listen(tcp_socket, 5) == -1) {
         perror("TCP listen"); exit(1);
     }
+    pid_t pid = fork();
     while (true) {
-        pid_t pid = fork();
         if (pid == -1) {
             perror("fork protocols");
             exit(1);
@@ -151,16 +151,16 @@ void execute_request_tcp(int fd, struct sockaddr_in addr, char *request) {
     }
 }
 
-void extract(char *src, int fd, int args) {
+void extract(char *src, int fd, int spaces) {
     int num_spaces = 0;
     ssize_t n = 0, total = 3; // 3 for cmd
-    while(args == 0 || args > num_spaces) {
+    while(spaces == 0 || spaces > num_spaces) {
         n=recv(fd, src + total, 1, 0);
         if(n==-1) exit(1);
         total += n;
         src[total] = '\0';
         if (src[total-1] == ' ') {
-            if(++num_spaces == args) {
+            if(++num_spaces == spaces) {
                 src[total-1] = '\0';
                 break;
             }

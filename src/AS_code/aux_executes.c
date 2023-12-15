@@ -5,6 +5,7 @@
 void send_reply_to_user(int fd, struct sockaddr_in addr, char *reply) {
     if (sendto(fd, reply, strlen(reply), 0,
     (struct sockaddr*)&addr, sizeof(addr)) == -1) exit(1);
+    if (verbose) printf("Replied: %s", reply);
 }
 
 void send_myauctions(int fd, struct sockaddr_in addr, char *uid) {

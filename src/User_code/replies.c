@@ -268,13 +268,17 @@ void reply_bid(char *status, char *buffer) {
 }
 
 void extract(char *src, char *dst, int fd) {
-    ssize_t n = 0;
+    ssize_t n = 0, total = 0;
     memset(src, 0, BUFFER_SIZE);
     while(true) {
-        n=read(fd, src, 1);
+        n=recv(fd, src + total, 1, 0);
         if(n==-1) exit(1);
-        if (src[0] == ' ' || src[0] == '\n') break;
-        src[n] = '\0';
-        strcat(dst, src);
+        if (src[total] == ' ' || 
+            src[total] == '\n' || 
+            src[total] == '\0') 
+            break;
+        total += n;
     }
+    src[total] = '\0';
+    strcpy(dst, src);
 }

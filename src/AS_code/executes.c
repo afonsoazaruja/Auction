@@ -11,10 +11,10 @@ void ex_login(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RLI ERR\n");
         return;
     }
-    if (is_logged_in(uid)) {
-        send_reply_to_user(fd, addr, "user already logged in\n");
-        return;
-    }
+    // if (is_logged_in(uid)) {
+    //     send_reply_to_user(fd, addr, "user already logged in\n");
+    //     return;
+    // }
     if (is_registered(uid)) 
         try_to_login(fd, addr, uid, password);
     else 

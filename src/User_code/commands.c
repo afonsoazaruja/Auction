@@ -203,3 +203,20 @@ long get_file_size(char *fname) {
     }
     return 0; // only to compile
 }
+
+void display_help() {
+    printf("%-48s %s\n", "Command", "Description");
+    printf("---------------------------------------------------- --------------------------------------------\n");
+    printf("%-48s %s\n", "login UID password", "Log in or register a user");
+    printf("%-48s %s\n", "logout", "Log out the currently logged-in user");
+    printf("%-48s %s\n", "unregister", "Unregister the currently logged-in user");
+    printf("%-48s %s\n", "exit", "Exit the User application");
+    printf("%-48s %s\n", "open name asset_fname start_value timeactive", "Open a new auction");
+    printf("%-48s %s\n", "close AID", "Close an ongoing auction");
+    printf("%-48s %s\n", "myauctions or ma", "List auctions started by the logged-in user");
+    printf("%-48s %s\n", "mybids or mb", "List auctions for which the logged-in user has placed a bid");
+    printf("%-48s %s\n", "list or l", "List all auctions");
+    printf("%-48s %s\n", "show_asset AID or sa AID", "View the image file of the asset in sale");
+    printf("%-48s %s\n", "bid AID value or b AID value", "Place a bid for an auction");
+    printf("%-48s %s\n", "show_record AID or sr AID", "View the record of an auction");
+}

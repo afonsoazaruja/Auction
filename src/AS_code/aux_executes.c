@@ -30,21 +30,33 @@ void send_mybids(int fd, struct sockaddr_in addr, char *uid) {
     free(auctions_list);
 }
 
-void send_all_auctions(char *auctions_list, int fd, struct sockaddr_in addr) {
+void send_all_auctions(int fd, struct sockaddr_in addr, char *auctions_list) {
     char reply[strlen(auctions_list) + 10];
     sprintf(reply, "RLS OK %s\n", auctions_list);
     send_reply_to_user(fd, addr, reply);
     free(auctions_list);
 }
 
+void send_record(int fd, struct sockaddr_in addr, char *aid) {
+    char* record = create_record(aid);
+    if (record == NULL) {
+        free(record);
+        return; // only this??
+    }
+    char reply[strlen(record) + 10];
+    sprintf(reply, "RRC OK %s\n", record);
+    send_reply_to_user(fd, addr, reply);
+    free(record);
+}
+
 void send_asset(int fd, struct sockaddr_in addr, char *aid) {
-    char asset_dir[MAX_FILENAME+50], reply[MAX_BUFFER_SIZE];
+    char asset_path[MAX_FILENAME+50], reply[MAX_BUFFER_SIZE];
     ssize_t size = 0;
     char *asset_fname = get_asset_name(aid);
 
-    sprintf(asset_dir, "%s/%s/ASSET/%s", PATH_AUCTIONS_DIR, aid, asset_fname);
-    size = get_file_size(asset_dir);
-    int asset_fd = open(asset_dir, O_RDONLY);
+    sprintf(asset_path, "%s/%s/ASSET/%s", PATH_AUCTIONS_DIR, aid, asset_fname);
+    size = get_file_size(asset_path);
+    int asset_fd = open(asset_path, O_RDONLY);
 
     sprintf(reply, "RSA OK %s %ld ", asset_fname, size);
     send_reply_to_user(fd, addr, reply);
@@ -84,33 +96,26 @@ void receive_asset(int fd, struct sockaddr_in addr, char *aid, char *asset_fname
 bool is_registered(char *uid) {
     char pass_fname[100];
     sprintf(pass_fname, "%s/%s/%s_pass.txt", PATH_USERS_DIR, uid, uid);
-
-    FILE *pass_file = fopen(pass_fname, "r");
-    if (pass_file == NULL) return false;
-    
-    fclose(pass_file);
-    return true;
+    return file_exists(pass_fname);
 }
 
 bool is_logged_in(char *uid) {
     char login_fname[100];
     sprintf(login_fname, "%s/%s/%s_login.txt", PATH_USERS_DIR, uid, uid);
+    return file_exists(login_fname);
+}
 
-    FILE *login_file = fopen(login_fname, "r");
-    if (login_file == NULL) return false;
-    
-    fclose(login_file);
-    return true;
+bool is_auction_owned(char *uid, char *aid) {
+    char hosted_auction_fname[32];
+    sprintf(hosted_auction_fname, "%s/%s/HOSTED/%s.txt", PATH_USERS_DIR, uid, aid);
+    return file_exists(hosted_auction_fname);
 }
 
 bool is_auction_active(char *aid) {
     long fulltime, timeactive;
     char file_name[100];
 
-    sprintf(file_name, "%s/%s/END_%s.txt", PATH_AUCTIONS_DIR, aid, aid);
-    FILE *end_file = fopen(file_name, "r");
-
-    if (end_file == NULL) {
+    if (!end_file_exists(aid)) {
         sprintf(file_name, "%s/%s/START_%s.txt", PATH_AUCTIONS_DIR, aid, aid);
         FILE *start_file = fopen(file_name, "r");
         if (start_file == NULL) {
@@ -126,19 +131,7 @@ bool is_auction_active(char *aid) {
         }
         return true;
     }
-    fclose(end_file);
     return false;
-}
-
-bool is_auction_owned(char *uid, char *aid) {
-    char hosted_auction_fname[100];
-    sprintf(hosted_auction_fname, "%s/%s/HOSTED/%s.txt", PATH_USERS_DIR, uid, aid);
-
-    FILE *aid_file = fopen(hosted_auction_fname, "r");
-    if (aid_file == NULL) return false;
-      
-    fclose(aid_file);
-    return true;
 }
 
 bool is_correct_password(char *password, char *uid) {
@@ -159,14 +152,6 @@ bool is_correct_password(char *password, char *uid) {
     }
     fclose(pass_file);
     return false;
-}
-
-bool is_auct_hosted_by_user(char *aid, char *uid) {
-    char auction_file_name[32];
-    sprintf(auction_file_name, "%s/%s/HOSTED/%s.txt", PATH_USERS_DIR, uid, aid);
-    
-    if (fopen(auction_file_name, "r") == NULL) return false;
-    return true;
 }
 
 bool is_bid_too_small(char *aid, int bid_value) {
@@ -192,7 +177,7 @@ bool is_bid_too_small(char *aid, int bid_value) {
             if (entry->d_name[i] == '.') break;
             val[i] = entry->d_name[i+4];
         }
-        if (atoi(val) > bid_value)  {
+        if (atoi(val) >= bid_value)  {
             closedir(bids_dir);
             return true;
         }    
@@ -200,6 +185,13 @@ bool is_bid_too_small(char *aid, int bid_value) {
     closedir(bids_dir);
     return false;
 }
+
+bool auction_exists(char *aid) {
+    char auction_path[100];
+    sprintf(auction_path, "%s/%s", PATH_AUCTIONS_DIR, aid);
+    return directoryExists(auction_path);
+}
+
 
 bool directoryExists(const char *path) {
     struct stat st;
@@ -250,6 +242,16 @@ bool has_placed_bids(char *uid) {
     }
     closedir(bidded_dir);
     return false;
+}
+
+bool end_file_exists(char *aid) {
+    char end_fname[SIZE_END_FNAME];
+    sprintf(end_fname, "%s/%s/END_%s.txt", PATH_AUCTIONS_DIR, aid, aid);
+    return file_exists(end_fname);
+}
+
+bool file_exists(const char *filename) {
+    return access(filename, F_OK) != -1;
 }
 
 void try_to_login(int fd, struct sockaddr_in addr, char *uid, char *password) {
@@ -305,7 +307,8 @@ void register_user(int fd, struct sockaddr_in addr, char *uid, char *password) {
     send_reply_to_user(fd, addr, "RLI REG\n");
 }
 
-void register_auction(int fd, struct sockaddr_in addr, char *uid, char *name, char *asset, char *start_value, char *timeactive, char *aid) {
+void register_auction(int fd, struct sockaddr_in addr, char *uid, char *name, char *asset,
+ char *start_value, char *timeactive, char *aid) {
     char path[100];
 
     sprintf(path, "%s/%s", PATH_AUCTIONS_DIR, aid);
@@ -314,7 +317,7 @@ void register_auction(int fd, struct sockaddr_in addr, char *uid, char *name, ch
             perror("Error creating directory auction"); exit(1);
         }
     }
-    create_start_auction_file(uid, name, asset, start_value, timeactive, aid);
+    start_auction(uid, name, asset, start_value, timeactive, aid);
 
     sprintf(path, "%s/%s/ASSET", PATH_AUCTIONS_DIR, aid);
     if (mkdir(path, 0777) != 0) {
@@ -332,31 +335,7 @@ void register_auction(int fd, struct sockaddr_in addr, char *uid, char *name, ch
     fclose(host_file);
 }
 
-void create_login_file(char *uid) {
-    char login_fname[100];
-    sprintf(login_fname, "%s/%s/%s_login.txt", PATH_USERS_DIR, uid, uid);
-    FILE *login_file = fopen(login_fname, "w");
-
-    if (login_file == NULL) {
-        perror("Error opening file"); exit(1);
-    }
-    fclose(login_file);
-}
-
-void create_pass_file(char *uid, char *password) {
-    char pass_fname[100];
-    sprintf(pass_fname, "%s/%s/%s_pass.txt", PATH_USERS_DIR, uid, uid);
-
-    FILE *pass_file = fopen(pass_fname, "w");
-    if (pass_file != NULL) {
-        fprintf(pass_file, "%s", password);
-        fclose(pass_file);
-    } else {
-        perror("Error opening file"); exit(1);
-    }
-}
-
-void create_start_auction_file(char *uid, char *name, char *asset,
+void start_auction(char *uid, char *name, char *asset,
  char *start_value, char *timeactive, char *aid) 
 {
     char start_fname[100];
@@ -403,11 +382,57 @@ void close_auction(char *aid, long start_fulltime, long end_fulltime) {
     }
 }
 
-void create_bid(char *aid, char *uid, int value) {
-    char bids_fname[100];
-    char bidded_fname[100];
+void create_login_file(char *uid) {
+    char login_fname[100];
+    sprintf(login_fname, "%s/%s/%s_login.txt", PATH_USERS_DIR, uid, uid);
 
-    sprintf(bids_fname, "%s/%s/BIDS/%s_%d.txt", PATH_AUCTIONS_DIR, aid, aid, value);
+    FILE *login_file = fopen(login_fname, "w");
+    if (login_file == NULL) {
+        perror("Error opening file"); exit(1);
+    }
+    fclose(login_file);
+}
+
+void create_pass_file(char *uid, char *password) {
+    char pass_fname[100];
+    sprintf(pass_fname, "%s/%s/%s_pass.txt", PATH_USERS_DIR, uid, uid);
+
+    FILE *pass_file = fopen(pass_fname, "w");
+    if (pass_file != NULL) {
+        fprintf(pass_file, "%s", password);
+        fclose(pass_file);
+    } else {
+        perror("Error opening file"); exit(1);
+    }
+}
+
+void create_bid(char *aid, char *uid, int value) {
+    create_bids_file(aid, uid, value);
+    create_bidded_file(aid, uid);
+}
+
+void create_bids_file(char *aid, char *uid, int value) {
+    time_t t = time(NULL);
+    struct tm *start_time = gmtime(&t);
+    time_t bid_sec_time = t - get_start_fulltime(aid);
+
+    char bids_fname[100];
+    sprintf(bids_fname, "%s/%s/BIDS/%06d.txt", PATH_AUCTIONS_DIR, aid, value);
+
+    FILE *bids_file = fopen(bids_fname, "w");
+    if (bids_file != NULL) {
+        fprintf(bids_file, "%s %d %4d-%02d-%02d %02d:%02d:%02d %ld", 
+        uid, value,
+        start_time->tm_year+1900, start_time->tm_mon+1, start_time->tm_mday,
+        start_time->tm_hour, start_time->tm_min, start_time->tm_sec, bid_sec_time);
+        fclose(bids_file);
+    } else {
+        perror("Error creating file in BIDS"); exit(1);
+    } 
+}
+
+void create_bidded_file(char *aid, char *uid) {
+    char bidded_fname[100];
     sprintf(bidded_fname, "%s/%s/BIDDED/%s.txt", PATH_USERS_DIR, uid, aid);
 
     FILE *bidded_file = fopen(bidded_fname, "w");
@@ -415,16 +440,10 @@ void create_bid(char *aid, char *uid, int value) {
         perror("Error creating file in BIDDED"); exit(1);
     }
     fclose(bidded_file);
-
-    FILE *bids_file = fopen(bids_fname, "w");
-    if (bids_file == NULL) {
-        perror("Error creating file in BIDS"); exit(1);
-    } 
-    fclose(bids_file);
 }
 
 char* create_list_auctions(char *path_dir) {
-    size_t num_auctions = get_num_auctions_in_dir(path_dir);
+    size_t num_auctions = get_num_auctions(path_dir);
     Auction *auctions = get_auctions(path_dir, num_auctions);
 
     size_t len = 0;
@@ -437,14 +456,247 @@ char* create_list_auctions(char *path_dir) {
     }
     size_t currentPos = 0;
     for (size_t i=0; i<num_auctions; i++) {
-        strcpy(list_auctions + currentPos, auctions[i].aid);
-        currentPos += strlen(auctions[i].aid);
-
-        sprintf(list_auctions + currentPos, " %d ", auctions[i].state);
-        currentPos += 3; // 2 spaces + state (0 or 1);
+        sprintf(list_auctions + currentPos, "%s %d ", auctions[i].aid, auctions[i].state);
+        currentPos += strlen(auctions[i].aid) + 3; // +3 for 2 spaces + state (0 or 1);
     }
     list_auctions[currentPos] = '\0';
     return list_auctions;
+}
+
+char *create_list_bids(char *aid) {
+    size_t num_bids = get_num_bids(aid);
+    Bid *bids = get_bids(aid, num_bids);
+
+    size_t len = 0;
+    for (size_t i=0; i<num_bids; i++) {
+        len += 200;  
+    }
+    char *list_bids = (char*)malloc(len+1); 
+    if (list_bids == NULL) {
+        perror("Memory allocation error"); return NULL;
+    }
+    size_t currentPos = 0;
+    for (size_t i=0; i<num_bids; i++) {
+        sprintf(list_bids + currentPos, "B %s %d %s %s %d ",
+        bids[i].uid, bids[i].value, bids[i].date, bids[i].time, bids[i].sec_time);
+
+        currentPos += strlen(bids[i].uid) + get_num_digits(bids[i].value) + strlen(bids[i].date)
+        + strlen(bids[i].time) + get_num_digits(bids[i].sec_time) + 7; // + 7 for B and spaces
+    }
+    list_bids[currentPos-1] = '\0';
+    return list_bids;
+}
+
+char *create_record(char *aid) {
+    char *auction_info = get_auction_info(aid);
+    if (auction_info == NULL) return NULL;
+
+    char *record = malloc(strlen(auction_info) + 1); 
+    if (record == NULL) {
+        perror("Memory allocation error");
+        return NULL;
+    }
+    strcpy(record, auction_info);
+
+    char *list_bids = create_list_bids(aid);
+    if (list_bids == NULL) {
+        return NULL;
+    }
+    if (list_bids[0] != '\0') {
+        record = realloc(record, strlen(auction_info) + strlen(list_bids) + 2);
+        if (record == NULL) {
+            perror("Memory reallocation error");
+            free(auction_info); free(list_bids);
+            return NULL;
+        }
+        strcat(record, " ");
+        strcat(record, list_bids);
+    }
+    if (end_file_exists(aid)) {
+        char *end_info = get_end_info(aid);
+        if (end_info == NULL) {
+            return NULL;
+        }
+        record = realloc(record, strlen(auction_info) + strlen(list_bids)
+        + strlen(end_info) + 2);
+        if (record == NULL) {
+            perror("Memory reallocation error");
+            free(end_info); free(auction_info); free(list_bids);
+            return NULL;
+        }
+        strcat(record, " ");
+        strcat(record, end_info);
+        free(end_info); 
+    }
+    free(auction_info);
+    free(list_bids);
+    return record;
+}
+
+size_t get_num_auctions(const char *path) {
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        perror("Error opening directory"); exit(1);
+    }
+    size_t count = 0;
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strnlen(entry->d_name, 3) >= 3) {
+            char temp[4]; 
+            strncpy(temp, entry->d_name, 3);
+            temp[3] = '\0'; 
+            // only process files/directories with name aid
+            if (is_AID(temp)) count++;
+        }
+    }
+    closedir(dir);
+    return count;
+}
+
+size_t get_num_bids(const char *aid) {
+    char bids_path[SIZE_BIDS_PATH];
+    sprintf(bids_path, "%s/%s/BIDS", PATH_AUCTIONS_DIR, aid);
+
+    DIR *dir = opendir(bids_path);
+    if (dir == NULL) {
+        perror("Error opening directory"); exit(1);
+    }
+    size_t count = 0;
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG && strlen(entry->d_name) == SIZE_BIDS_FNAME) {
+            count++;
+        }
+    }
+    closedir(dir);
+    return count;
+}
+
+char* get_auction_info(char *aid) {
+    char *auction_info = (char*)malloc(MAX_SIZE_START_FILE+1);
+    char path_start_file[SIZE_START_FNAME+1];
+    sprintf(path_start_file, "%s/%s/START_%s.txt", PATH_AUCTIONS_DIR, aid, aid);
+
+    FILE *start_file = fopen(path_start_file, "r");
+    if (start_file == NULL) {
+        perror("Error opening start file"); return NULL;
+    }
+    fgets(auction_info, MAX_SIZE_START_FILE, start_file);
+    filtrate_info(auction_info);
+    puts(auction_info);
+
+    fclose(start_file);
+    return auction_info;
+}
+
+char *get_end_info(char *aid) {
+    char *file_contents = (char*)malloc(MAX_SIZE_END_FILE+1);
+    
+    char end_fname[SIZE_END_FNAME+1];
+    sprintf(end_fname, "%s/%s/END_%s.txt", PATH_AUCTIONS_DIR, aid, aid);
+
+    FILE *end_file = fopen(end_fname, "r");
+    if (end_file == NULL) {
+        perror("Error opening file"); free(file_contents);
+    } else {
+        fgets(file_contents, MAX_SIZE_END_FILE, end_file);
+        char *end_info = (char*)malloc(strlen(file_contents)+3);
+        sprintf(end_info, "E %s", file_contents);
+        free(file_contents);
+        fclose(end_file);
+        return end_info;
+    }
+    return NULL;
+}
+
+Auction* get_auctions(const char *path_dir, size_t num_auctions) {
+    Auction *auctions = (Auction*)malloc(num_auctions * sizeof(Auction));
+    if (auctions == NULL) {
+        perror("Memory allocation error"); exit(1);
+    }
+    DIR *dir = opendir(path_dir);
+    if (dir == NULL) {
+        perror("Error opening directory with bids"); exit(1);
+    }
+    size_t index = 0;
+    struct dirent *entry;
+
+    // Extract auctions
+    while ((entry = readdir(dir)) != NULL) {
+        if (strnlen(entry->d_name, 3) >= 3) {
+            char temp[4]; 
+            strncpy(temp, entry->d_name, 3);
+            temp[3] = '\0'; 
+
+            // only process files/directories with name aid
+            if (is_AID(temp)) {
+                strncpy(auctions[index].aid, temp, 3);
+                auctions[index].aid[3] = '\0';
+
+                if (is_auction_active(auctions[index].aid)) {
+                    auctions[index].state = 1;
+                } else {
+                    auctions[index].state = 0;
+                }
+                index++;
+            }
+        }
+    }
+    closedir(dir);
+    qsort(auctions, num_auctions, sizeof(Auction), compare_auctions);
+    return auctions;
+}
+
+Bid* get_bids(char *aid, size_t num_bids) {
+    Bid *bids = (Bid*)malloc(num_bids*sizeof(Bid));
+    if (bids == NULL) {
+        perror("Memory allocation error"); exit(1);
+    }
+    char path_bids[100];
+    sprintf(path_bids, "%s/%s/BIDS", PATH_AUCTIONS_DIR, aid);
+
+    DIR *dir = opendir(path_bids);
+    if (dir == NULL) {
+        perror("Error opening directory with bids"); exit(1);
+    }
+    size_t index = 0;
+    struct dirent *entry;
+
+    // Extract bids
+    while ((entry = readdir(dir)) != NULL) {
+        // only process bid files
+        if (entry->d_type == DT_REG && strlen(entry->d_name) == 10) {
+            add_bid_to_list(bids, aid, entry->d_name, index);
+            index++;
+        }
+    }
+    closedir(dir);
+    qsort(bids, num_bids, sizeof(Bid), compare_bids);
+    return bids;
+}
+
+long get_file_size(char *fname) {
+    struct stat filestat;
+       
+    if (stat(fname, &filestat) == 0) {
+        return filestat.st_size;
+    } else {
+        perror("Error getting file information");
+    }
+    return 0; // only to compile
+}
+
+int get_num_digits(int value) {
+    int numDigits = 0;
+
+    if (value == 0) {
+        return 1;
+    }
+    while (value != 0) {
+        value /= 10;
+        numDigits++;
+    }
+    return numDigits;
 }
 
 char* get_aid() {
@@ -477,7 +729,23 @@ char* get_aid() {
     }
 }
 
-char *get_asset_name(char *aid) {
+time_t get_start_fulltime(char *aid) {
+    time_t start_fulltime;
+    char file_contents[100];
+    char start_file_name[100];
+    sprintf(start_file_name, "%s/%s/START_%s.txt", PATH_AUCTIONS_DIR, aid, aid);
+
+    FILE *start_file = fopen(start_file_name, "r");
+    if (start_file == NULL) {
+        perror("Memory allocation error"); exit(1);
+    }
+    fgets(file_contents, sizeof(file_contents), start_file);
+    sscanf(file_contents,"%*s %*s %*s %*s %*s %*s %*s %ld", &start_fulltime);
+    printf("Read start_fulltime: %ld\n", start_fulltime);
+    return start_fulltime;
+}
+
+char* get_asset_name(char *aid) {
     char dir[20+MAX_FILENAME+20];
     char *asset_fname = malloc(MAX_FILENAME);
     sprintf(dir, "%s/%s/START_%s.txt", PATH_AUCTIONS_DIR, aid, aid);
@@ -491,59 +759,52 @@ char *get_asset_name(char *aid) {
     return asset_fname;
 }
 
-size_t get_num_auctions_in_dir(const char *path) {
-    DIR *dir = opendir(path);
-    if (dir == NULL) {
-        perror("Error opening directory with bids"); exit(1);
-    }
-    size_t count = 0;
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        if ((entry->d_type == DT_REG || entry->d_type == DT_DIR) && isdigit(entry->d_name[0])) {
-            count++;
-        }
-    }
-    closedir(dir);
-    return count;
+int compare_auctions(const void *a, const void *b) {
+    const Auction *auction1 = (const Auction*)a;
+    const Auction *auction2 = (const Auction*)b;
+    return strcmp(auction1->aid, auction2->aid);
 }
 
-Auction* get_auctions(const char *path_dir, size_t num_auctions) {
-    Auction *auctions = (Auction*)malloc(num_auctions * sizeof(Auction));
-    if (auctions == NULL) {
-        perror("Memory allocation error"); exit(1);
-    }
-    DIR *dir = opendir(path_dir);
-    if (dir == NULL) {
-        perror("Error opening directory with bids"); exit(1);
-    }
-    size_t index = 0;
-    struct dirent *entry;
-    // Extract bids
-    while ((entry = readdir(dir)) != NULL) {
-        // only process files/directories with name aid
-        if ((entry->d_type == DT_REG || entry->d_type == DT_DIR) && isdigit(entry->d_name[0])) {
-            strncpy(auctions[index].aid, entry->d_name, 3);
-            auctions[index].aid[3] = '\0';
-
-            if (is_auction_active(auctions[index].aid)) {
-                auctions[index].state = 1;
-            } else {
-                auctions[index].state = 0;
-            }
-            index++;
-        }
-    }
-    closedir(dir);
-    return auctions;
+int compare_bids(const void *a, const void *b) {
+    const Bid *bid1 = (const Bid*)a;
+    const Bid *bid2 = (const Bid*)b;
+    return bid1->value > bid2->value;
 }
 
-long get_file_size(char *fname) {
-    struct stat filestat;
-       
-    if (stat(fname, &filestat) == 0) {
-        return filestat.st_size;
-    } else {
-        perror("Error getting file information");
+void add_bid_to_list(Bid *bids, char *aid, char *bid_fname, int index) {
+    char bid_info[100];
+    char path_bid[100];
+    sprintf(path_bid, "%s/%s/BIDS/%s", PATH_AUCTIONS_DIR, aid, bid_fname);
+
+    FILE *bid_file = fopen(path_bid, "r");
+    if (bid_file == NULL) {
+        perror("Error opening file"); exit(1);
     }
-    return 0; // only to compile
+    fgets(bid_info, sizeof(bid_info), bid_file);
+    sscanf(bid_info, "%s %d %s %s %d", bids[index].uid, &bids[index].value, bids[index].date,
+    bids[index].time, &bids[index].sec_time);
+
+    fclose(bid_file);
 }
+
+void filtrate_info(char *auction_info) {
+    char uid[SIZE_UID+1];
+    char auction_name[100];
+    char asset_fname[MAX_FILENAME+1];
+    int start_value;
+    int time_active;
+    char start_date[SIZE_DATE+1];
+    char start_time[SIZE_TIME+1];
+
+    sscanf(auction_info, "%s %s %s %d %d %s %s", uid, auction_name, asset_fname,
+    &start_value, &time_active, start_date, start_time);
+
+    sprintf(auction_info, "%s %s %s %d %s %s %d", uid, auction_name, asset_fname,
+    start_value, start_date, start_time, time_active);
+}
+
+
+
+
+
+

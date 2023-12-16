@@ -68,9 +68,9 @@ void handle_auctions(char *list, char *buffer, char *type) {
                 token = strtok(NULL, " ");
                 strcat(buffer, token);
                 token = strtok(NULL, " ");
+                strcat(buffer, "\n│Time: ");
                 strcat(buffer, token);
-                strcat(buffer, "\n");
-                strcat(buffer, "└\n");
+                strcat(buffer, "\n└\n");
             }
             else if (strcmp(token, "E") == 0) {
                 strcat(buffer, "┌───\n│Ended in: ");
@@ -168,8 +168,9 @@ void reply_show_record(char *status, char *buffer, const char *list) {
 void analyze_reply_tcp(char *buffer, int fd) {
     char type_reply[4] = "";
     char status[4] = "";
-    extract(buffer, type_reply, fd);
-    extract(buffer, status, fd);
+    
+    if (read_reply_tcp(buffer, type_reply, fd) == -1) return;
+    if (read_reply_tcp(buffer, status, fd) == -1) return;
 
     if (strcmp(type_reply, "ROA") == 0) { 
        reply_open(status, buffer, fd);
@@ -182,12 +183,12 @@ void analyze_reply_tcp(char *buffer, int fd) {
     } else {
         sprintf(buffer, "unknown reply\n");
     }
-}   
+}
 
 void reply_open(char *status, char *buffer, int fd) {
     char aid[SIZE_AID+1] = "";
     if (strcmp(status, "OK") == 0) {
-        extract(buffer, aid, fd); // AID
+        if (read_reply_tcp(buffer, aid, fd) == -1) return;
         sprintf(buffer, "auction successfully created AID %s\n", aid);
     } else if (strcmp(status, "NOK") == 0) {
         sprintf(buffer, "auction could not be started\n");
@@ -222,9 +223,9 @@ void reply_show_asset(char *status, char *buffer, int fd) {
         long size = 0;
 
         memset(buffer, 0, BUFFER_SIZE);
-        extract(buffer, fname, fd);
-        extract(buffer, fsize, fd);
-        
+        if (read_reply_tcp(buffer, fname, fd) == -1) return;
+        if (read_reply_tcp(buffer, fsize, fd) == -1) return;
+
         size = strtol(fsize, &endptr, 10);
         char *data = malloc(size);
         sprintf(asset_dir, "%s/%s", SA_DIR, fname);
@@ -267,12 +268,20 @@ void reply_bid(char *status, char *buffer) {
     } 
 }
 
-void extract(char *src, char *dst, int fd) {
+int read_reply_tcp(char *src, char *dst, int fd) {
     ssize_t n = 0, total = 0;
     memset(src, 0, BUFFER_SIZE);
     while(true) {
         n=recv(fd, src + total, 1, 0);
-        if(n==-1) exit(1);
+        if(n==-1) {
+            if(errno == EAGAIN) {
+                sprintf(src, "Timeout");
+                return -1;
+            }
+            else {
+                perror("read_reply_tcp"); return -1;
+            }  
+        }
         if (src[total] == ' ' || 
             src[total] == '\n' || 
             src[total] == '\0') 
@@ -281,4 +290,5 @@ void extract(char *src, char *dst, int fd) {
     }
     src[total] = '\0';
     strcpy(dst, src);
+    return 0;
 }

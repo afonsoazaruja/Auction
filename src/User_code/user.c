@@ -1,14 +1,25 @@
 #include "user.h"
+#include "commands.h"
 #include "replies.h"
+#include <netdb.h>
 
 session user = {false, "", ""};
+volatile sig_atomic_t ctrl_c = 0;
 
 int main(int argc, char **argv) {
     char buffer[BUFFER_SIZE+1];
-    int socket_type;
     char port[6] = DEFAULT_PORT;
     char *asip = getIpAddress();
+    int socket_type;
+    bool first = true;
+    fd_set read_fds;
+    struct timeval timeout;
     memset(buffer, 0, BUFFER_SIZE+1);
+
+    if (signal(SIGINT, handle_SIGINT) == SIG_ERR) {
+        perror("Error setting up signal handler");
+        exit(EXIT_FAILURE);
+    }
     
     // Update ip and/or port 
     if (argc > 1) {
@@ -32,33 +43,50 @@ int main(int argc, char **argv) {
     printf("> asip: %s\n> port: %s\n", asip, port);    
 
     while (true) {
-        write(1, "-> ", 3);
-        memset(buffer, 0, BUFFER_SIZE);
-        fgets(buffer, BUFFER_SIZE, stdin);
-
-        // to be removed before submisson 
-        if (strcmp(buffer, "log\n") == 0) {
-            sprintf(buffer, "login 104168 password\n");
-            printf("%s", buffer);
+        if (first) { // because of select, otherwise it would keep printing '->'
+            write(1, "-> ", 3);
+            first = false;
         }
-        if (strcmp(buffer, "log2\n") == 0) {
-            sprintf(buffer, "login 102198 password\n");
-            printf("%s", buffer);
-        }
-        if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name Hispano-Suiza-K6.jpg 100 15\n");
-        if (strcmp(buffer, "open2\n") == 0) sprintf(buffer, "open name DaVinci_01.jpg 100 30\n");
-        // ------------------------------------------------------------------------- //
+        FD_ZERO(&read_fds);
+        FD_SET(STDIN_FILENO, &read_fds);
 
-        if (!is_input_valid(buffer, &socket_type, &user)) {
-            printf("ERR: %s\n", buffer);
-        } else {
-            if (strcmp(buffer, "EXT\n") == 0)  {
-                if (user.logged == false) break;
-                else puts("you need to logout before you exit");
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 10;
+
+        int ready = select(STDIN_FILENO + 1, &read_fds, NULL, NULL, &timeout);
+        if (ready > 0) {
+            if (FD_ISSET(STDIN_FILENO, &read_fds)) {    
+                fgets(buffer, BUFFER_SIZE, stdin);
+                // to be removed before submisson 
+                if (strcmp(buffer, "log\n") == 0) {
+                    sprintf(buffer, "login 104168 password\n");
+                    printf("%s", buffer);
+                }
+                else if (strcmp(buffer, "log2\n") == 0) {
+                    sprintf(buffer, "login 102198 password\n");
+                    printf("%s", buffer);
+                }
+                else if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name Hispano-Suiza-K6.jpg 100 15\n");
+                else if (strcmp(buffer, "open2\n") == 0) sprintf(buffer, "open name DaVinci_01.jpg 100 30\n");
+                // ------------------------------------------------------------------------- //
+
+                if (strcmp(buffer, "help\n") == 0) {
+                    display_help();
+                }
+                else if (!is_input_valid(buffer, &socket_type, &user)) {
+                    printf("ERR: %s\n", buffer);
+                } else {
+                    if (strcmp(buffer, "EXT\n") == 0)  {
+                        if (user.logged == false) break;
+                        else puts("you need to logout before you exit");
+                    }
+                    else if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
+                    else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
+                }
+                first = true;
             }
-            else if (socket_type == SOCK_DGRAM) send_request_udp(port, asip, buffer);
-            else if (socket_type == SOCK_STREAM) send_request_tcp(port, asip, buffer);
         }
+        if (ctrl_c) break;
     }
     free(asip);
 }
@@ -70,6 +98,7 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
 
     fd=socket(AF_INET,SOCK_STREAM,0);
     if (fd==-1) { perror("TCP socket");exit(1);} 
+    set_timeout(fd);
 
     memset(&hints,0,sizeof hints);
     hints.ai_family = AF_INET; // IPv4
@@ -89,7 +118,6 @@ void send_request_tcp(char *port, char *asip, char *buffer) {
     } else { // normal msg
         if (write(fd, buffer, strlen(buffer)) == -1) exit(1);
     }
-    set_timeout(fd);
     analyze_reply_tcp(buffer, fd);
     write(1,buffer,strlen(buffer));
     freeaddrinfo(res);
@@ -105,22 +133,31 @@ void send_request_udp(char *port, char *asip, char *buffer) {
     
     fd = socket(AF_INET, SOCK_DGRAM, 0); 
     if (fd == -1) exit(1);
+    set_timeout(fd);
 
     memset(&hints,0,sizeof hints);
     hints.ai_family = AF_INET; // IPv4
     hints.ai_socktype = SOCK_DGRAM; // UDP socket
+
     errcode = getaddrinfo(asip, port, &hints, &res);
-    if (errcode != 0) exit(1);
-
+    if (errcode != 0) {
+        perror("Udp failed getaddrinfo");
+        freeaddrinfo(res);
+        return;
+    }
     n = sendto(fd, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
-    if (n == -1) exit(1);
-
+    if (n == -1) {
+        perror("Udp failed sendto");
+        freeaddrinfo(res);
+        return;
+    }
     addrlen = sizeof(addr);
-    set_timeout(fd);
 
     n = recvfrom(fd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addr, &addrlen);
     if (n == -1) {
-        printf("Connection lost\n"); close(fd);
+        if (errno == EAGAIN) perror("Timeout");
+        else perror("Udp failed recvfrom");
+        freeaddrinfo(res);
         return;
     }
     buffer[n] = '\0';
@@ -197,4 +234,11 @@ void set_timeout(int fd) {
         close(fd);
         exit(EXIT_FAILURE);
     }
+}
+
+void handle_SIGINT(int SIGNAL) {
+    if (user.logged == true) {
+        printf("\nyou need to logout before you exit\n");
+    }
+    else ctrl_c = 1;
 }

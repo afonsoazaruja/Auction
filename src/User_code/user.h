@@ -13,8 +13,9 @@
 #include <fcntl.h>
 #include <sys/sendfile.h>
 #include <sys/time.h>
+#include <signal.h>
 
-#define DEFAULT_PORT "58023" // 58000 + 23
+#define DEFAULT_PORT "58023" // 58000 + GN
 #define BUFFER_SIZE 7000
 #define ASSET_DIR "../ASSETS"
 #define SA_DIR "../SA"

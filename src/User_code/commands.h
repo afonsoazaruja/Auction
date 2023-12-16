@@ -22,5 +22,6 @@ bool handle_asset(char *buffer);
 long get_file_size(char *filename);
 char *get_file_data(char *filename, long size);
 char *get_file_name(char *dir);
+void display_help();
 
 #endif

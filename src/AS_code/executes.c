@@ -9,16 +9,13 @@ void ex_login(int fd, struct sockaddr_in addr, char *request) {
     if (sscanf(request, "%*s %s %s", uid, password) != 2) exit(1);
     if (!is_login_valid(uid, password) || !validate_buffer(request)) {
         send_reply_to_user(fd, addr, "RLI ERR\n");
-        return;
     }
-    // if (is_logged_in(uid)) {
-    //     send_reply_to_user(fd, addr, "user already logged in\n");
-    //     return;
-    // }
-    if (is_registered(uid)) 
+    else if (is_registered(uid)) {
         try_to_login(fd, addr, uid, password);
-    else 
+    }
+    else {
         register_user(fd, addr, uid, password);
+    }
 }
 
 void ex_logout(int fd, struct sockaddr_in addr, char *request) {
@@ -102,13 +99,19 @@ void ex_list(int fd, struct sockaddr_in addr, char *request) {
         send_reply_to_user(fd, addr, "RLS NOK\n");
     }
     else {
-        send_all_auctions(auctions_list, fd, addr);
+        send_all_auctions(fd, addr, auctions_list);
     }
 }
 
 void ex_show_record(int fd, struct sockaddr_in addr, char *request) {
-    // To do
-    send_reply_to_user(fd, addr, "TST NOP\n");
+    char aid[SIZE_AID+1];
+    sscanf(request, "%*s %s", aid);
+
+    if (!auction_exists(aid)) {
+        send_reply_to_user(fd, addr, "RRC NOK\n");
+    } else {
+        send_record(fd, addr, aid);
+    }
 }
 
 void ex_open(int fd, struct sockaddr_in addr, char *request) {
@@ -201,7 +204,7 @@ void ex_bid(int fd, struct sockaddr_in addr, char *request) {
     else if (!is_logged_in(uid)) {
         send_reply_to_user(fd, addr, "RBD NLG\n");
     }
-    else if (is_auct_hosted_by_user(aid, uid)) {
+    else if (is_auction_owned(aid, uid)) {
         send_reply_to_user(fd, addr, "RBD ILG\n");
     }
     else if (is_bid_too_small(aid, value)) {

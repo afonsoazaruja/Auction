@@ -28,8 +28,6 @@ void reply_close(char *status, char *buffer);
 void reply_show_asset(char *status, char *buffer, int fd);
 void reply_bid(char *status, char *buffer);
 
-void extract(char *src, char *dst, int fd);
-
-void flush_pipe(int fd);
+int read_reply_tcp(char *src, char *dst, int fd);
 
 #endif

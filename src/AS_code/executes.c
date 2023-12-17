@@ -3,8 +3,8 @@
 #include "requests.h"
 
 void ex_login(int fd, struct sockaddr_in addr, char *request) {
-    char uid[SIZE_UID + 1];
-    char password[SIZE_PASSWORD + 1];
+    char uid[SIZE_UID+1];
+    char password[SIZE_PASSWORD+1];
 
     if (sscanf(request, "%*s %s %s", uid, password) != 2) {
         perror("ex_login sscanf"); return;
@@ -21,8 +21,8 @@ void ex_login(int fd, struct sockaddr_in addr, char *request) {
 }
 
 void ex_logout(int fd, struct sockaddr_in addr, char *request) {
-    char uid[SIZE_UID + 1];
-    char password[SIZE_PASSWORD + 1];
+    char uid[SIZE_UID+1];
+    char password[SIZE_PASSWORD+1];
     char login_file_name[100];
 
     if (sscanf(request, "%*s %s %s", uid, password) != 2) {
@@ -44,8 +44,8 @@ void ex_logout(int fd, struct sockaddr_in addr, char *request) {
 }
 
 void ex_unregister(int fd, struct sockaddr_in addr, char *request) {
-    char uid[SIZE_UID + 1];
-    char password[SIZE_PASSWORD + 1];
+    char uid[SIZE_UID+1];
+    char password[SIZE_PASSWORD+1];
     char login_file_name[100];
     char pass_file_name[100];
 
@@ -133,7 +133,7 @@ void ex_open(int fd, struct sockaddr_in addr, char *request) {
     char *aid = get_aid();
 
     if (aid == NULL) return;
-    
+
     if (strcmp(aid, "") == 0) {
         free(aid);
         return;
@@ -169,14 +169,14 @@ void ex_close(int fd, struct sockaddr_in addr, char *request) {
     char uid[SIZE_UID+1];
     char password[SIZE_PASSWORD+1];
     char aid[MAX_STATUS_SIZE+1];
-    char dir[100];
+    char auction_path[SIZE_AUCTION_PATH+1];
 
     if (sscanf(request, "%*s %s %s %s", uid, password, aid) != 3) {
         perror("ex_close sscanf"); return;
     }
-    sprintf(dir, "%s/%s", PATH_AUCTIONS, aid);
+    sprintf(auction_path, "%s/%s", PATH_AUCTIONS, aid);
     
-    if (!directoryExists(dir)) {
+    if (!directoryExists(auction_path)) {
         send_reply_to_user(fd, addr, "RCL EAU\n"); 
     }
     else if (!is_correct_password(password, uid) || !is_registered(uid)) {
@@ -200,15 +200,16 @@ void ex_close(int fd, struct sockaddr_in addr, char *request) {
 }
 
 void ex_show_asset(int fd, struct sockaddr_in addr, char *request) {
-    char aid[MAX_STATUS_SIZE+1], directory[100];
+    char aid[MAX_STATUS_SIZE+1];
+    char auction_path[SIZE_AUCTION_PATH+1];
     
     if (sscanf(request, "%*s %s", aid) != 1) {
         perror("ex_show_asset sscanf"); return;
     }
     
-    sprintf(directory, "%s/%s", PATH_AUCTIONS, aid);
+    sprintf(auction_path, "%s/%s", PATH_AUCTIONS, aid);
 
-    if (!directoryExists(directory)) {
+    if (!directoryExists(auction_path)) {
         send_reply_to_user(fd, addr, "RSA NOK\n");
     }
     else {

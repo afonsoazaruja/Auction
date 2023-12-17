@@ -9,11 +9,22 @@
 #include <linux/limits.h>
 #include <stdio.h>
 
-#define PATH_USERS "../ASDIR/USERS"
-#define PATH_AUCTIONS "../ASDIR/AUCTIONS"
+#define PATH_USERS              "../ASDIR/USERS"
+#define SIZE_USER_PATH          14 + SIZE_UID + 1 // PATH_USERS (14), / (1)
+#define SIZE_PASS_FILE_PATH     SIZE_USER_PATH + SIZE_UID + 9 + 1 // "_pass.txt" (9) + / (1)
+#define SIZE_LOGIN_FILE_PATH    SIZE_USER_PATH + SIZE_UID + 10 + 1 // "_login.txt" (9) + / (1)
+#define SIZE_BIDDED_PATH        SIZE_USER_PATH + 6 + 1 // "BIDDED" (6), / (1)
+#define SIZE_BIDDED_FILE_PATH   SIZE_BIDDED_PATH + SIZE_AID + 4 + 1 // ".txt" (4), / (1)
+#define SIZE_HOSTED_PATH        SIZE_USER_PATH + 6 + 1 // "HOSTED" (6), / (1)
+#define SIZE_HOSTED_FILE_PATH   SIZE_HOSTED_PATH + SIZE_AID + 4 + 1 // ".txt" (4), / (1)
 
-// INCORRECT FOR NOW
-#define SIZE_BIDS_PATH 100
+#define PATH_AUCTIONS           "../ASDIR/AUCTIONS"
+#define SIZE_AUCTION_PATH       17 + SIZE_AID + 1 // PATH_AUCTION (17) + / (1)
+#define SIZE_START_FILE_PATH    SIZE_AUCTION_PATH + 6 + SIZE_AID + 4 + 1 // "START_" (6), ".txt" (4), / (1)
+#define SIZE_END_FILE_PATH      SIZE_AUCTION_PATH + 4 + SIZE_AID + 4 + 1 // "END_" (4), ".txt" (4), / (1) 
+#define SIZE_BIDS_PATH          SIZE_AUCTION_PATH + 4 + 1 // "BIDS" (4), / (1)
+#define SIZE_BIDS_FILE_PATH     SIZE_BIDS_PATH + SIZE_BIDS_FNAME + 1 // 000000.txt, / (1)
+#define SIZE_ASSET_FILE_PATH    SIZE_AUCTION_PATH + 5 + MAX_FILENAME + 2 // "ASSET" (5), / (2)
 
 #define MAX_DIGITS_SEC_TIME 5
 #define SIZE_DATE 10

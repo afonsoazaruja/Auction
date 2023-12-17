@@ -1,7 +1,5 @@
 #include "as.h"
 
-#define DEFAULT_PORT "58023"
-
 bool verbose = false;
 
 int main(int argc, char **argv) {

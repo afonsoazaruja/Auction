@@ -16,9 +16,9 @@ int main(int argc, char **argv) {
     struct timeval timeout;
     memset(buffer, 0, BUFFER_SIZE+1);
 
-    if (signal(SIGINT, handle_SIGINT) == SIG_ERR) {
+    if (signal(SIGINT, handle_sigint) == SIG_ERR) {
         perror("Error setting up signal handler");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     
     // Update ip and/or port 
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
         }
     }
     while (true) {
-        if (first) { // because of select, otherwise it would keep printing '>'
+        if (first) { // because of select, otherwise it would keep printing "> "
             write(1, "> ", 3);
             first = false;
         }
@@ -230,13 +230,13 @@ void set_timeout(int fd) {
     if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
         perror("Error setting socket options");
         close(fd);
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 }
 
-void handle_SIGINT(int SIGNAL) {
+void handle_sigint(int SIGNAL) {
     if (user.logged == true) {
-        printf("\nyou need to logout before you exit\n");
+        write(1, "\nyou need to logout before you exit\n> ", 39);
     }
     else ctrl_c = 1;
 }

@@ -8,14 +8,24 @@ void handle_requests(char *port) {
     int udp_socket, tcp_socket;
     struct sockaddr_in udp_addr, tcp_addr;
 
+    if (signal(SIGINT, handle_sigint) == SIG_ERR) {
+        perror("Error setting up signal handler");
+        exit(EXIT_FAILURE);
+    }
+
+    if (signal(SIGCHLD, handle_sigchld) == SIG_ERR) {
+        perror("Error setting up signal handler");
+        exit(EXIT_FAILURE);
+    }
+
     udp_socket = do_socket(SOCK_DGRAM);
     tcp_socket = do_socket(SOCK_STREAM);
 
+    set_timeout(udp_socket, SO_SNDTIMEO);
+    set_timeout(tcp_socket, SO_SNDTIMEO);
+
     initialize_addr(&udp_addr, port);
     initialize_addr(&tcp_addr, port);
-
-    // set_timeout(udp_socket, SO_RCVTIMEO);
-    // set_timeout(tcp_socket, SO_RCVTIMEO);
 
     do_bind(udp_socket, &udp_addr);
     do_bind(tcp_socket, &tcp_addr);
@@ -24,10 +34,10 @@ void handle_requests(char *port) {
         perror("TCP listen"); exit(1);
     }
 
-    if (signal(SIGINT, handle_SIGINT) == SIG_ERR) {
+    if (signal(SIGINT, handle_sigint) == SIG_ERR) {
         perror("Error setting up signal handler SIGINT"); exit(1);
     }
-    if (signal(SIGCHLD, handle_SIGCHLD) == SIG_ERR) {
+    if (signal(SIGCHLD, handle_sigchld) == SIG_ERR) {
         perror("Error setting up signal handler SIGCHLD"); exit(1);
     }
     pid_t pid = fork();
@@ -41,8 +51,7 @@ void handle_requests(char *port) {
         // Check TCP socket (parent)
         else handle_tcp_socket(tcp_socket, tcp_addr);
     }
-    if (pid == 0) exit(0);
-    else exit(0);
+    exit(0);
 }
 
 int do_socket(int socket_type) {
@@ -85,7 +94,6 @@ void handle_udp_socket(int udp_socket, struct sockaddr_in udp_addr) {
     else {
         buffer[n] = '\0';
         if (verbose) printf("> UDP received: %s", buffer);
-
         if (!validate_buffer(buffer)) {
             send_reply_to_user(udp_socket, udp_addr, "ERR\n");
         } else {
@@ -106,7 +114,7 @@ void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr) {
             return;
         }
         perror("TCP accept");
-        exit(1);
+        return;
     }
     else {
         pid_t pid = fork();
@@ -118,7 +126,7 @@ void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr) {
             while (total < 3) { // cmd
                 n = recv(new_tcp_socket, buffer + total, 1, 0);
                 if(n==-1) {
-                    close(new_tcp_socket); exit(1);
+                    close(new_tcp_socket); perror("handle_tcp_socket recv"); exit(1);
                 }
                 total += n;
             }
@@ -185,7 +193,7 @@ int read_request_tcp(char *src, int fd, int spaces) {
     int num_spaces = 0;
     ssize_t n = 0, total = 3; // 3 for cmd
     while(spaces == 0 || spaces > num_spaces) {
-        n=recv(fd, src + total, 1, 0);
+        n=recv(fd, src + total, 1, MSG_DONTWAIT);
         if(n==-1) {
             perror("Error in recv"); return -1;
         }
@@ -205,12 +213,12 @@ int read_request_tcp(char *src, int fd, int spaces) {
     return 0;
 }
 
-void handle_SIGINT(int SIGNAL) {
-    ctrl_c = 1;
-    exit(0);  
+void handle_sigint(int SIGNAL) {
+    write(1, "\n", 2);
+    exit(0);
 }
 
-void handle_SIGCHLD(int SIGNAL) {
+void handle_sigchld(int SIGNAL) {
     while(waitpid(0, NULL, WNOHANG) > 0);
 }
 

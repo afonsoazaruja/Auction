@@ -26,7 +26,7 @@ void send_request_udp(char *port, char *asip, char *buffer);
 void send_request_tcp(char *port, char *asip, char *buffer);
 char* getIpAddress();
 void send_open(char *buffer, int fd);
-void handle_SIGINT(int SIGNAL);
+void handle_sigint(int SIGNAL);
 void set_timeout(int fd);
 
 #endif

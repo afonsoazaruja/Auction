@@ -6,6 +6,8 @@
 #include "requests.h"
 #include <pthread.h>
 
+#define DEFAULT_PORT "58023"
+
 extern bool verbose;
 
 #endif

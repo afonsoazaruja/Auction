@@ -626,6 +626,8 @@ char* get_auction_info(char *aid) {
     fgets(auction_info, MAX_SIZE_START_FILE, start_file);
     filtrate_info(auction_info);
 
+    auction_info[strlen(auction_info)] = '\0';
+
     fclose(start_file);
     return auction_info;
 }
@@ -858,9 +860,3 @@ void filtrate_info(char *auction_info) {
     sprintf(auction_info, "%s %s %s %d %s %s %d", uid, auction_name, asset_fname,
     start_value, start_date, start_time, time_active);
 }
-
-
-
-
-
-

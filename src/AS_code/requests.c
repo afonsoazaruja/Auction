@@ -206,7 +206,7 @@ int read_request_tcp(char *src, int fd, int spaces) {
 }
 
 void handle_SIGINT(int SIGNAL) {
-    ctrl_c = 1;  
+    ctrl_c = 1;
     exit(0);  
 }
 

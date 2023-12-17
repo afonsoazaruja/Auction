@@ -9,8 +9,8 @@
 #include <linux/limits.h>
 #include <stdio.h>
 
-#define PATH_USERS_DIR "../ASDIR/USERS"
-#define PATH_AUCTIONS_DIR "../ASDIR/AUCTIONS"
+#define PATH_USERS "../ASDIR/USERS"
+#define PATH_AUCTIONS "../ASDIR/AUCTIONS"
 
 // INCORRECT FOR NOW
 #define SIZE_BIDS_PATH 100
@@ -42,13 +42,13 @@ typedef struct {
     int sec_time;
 } Bid;
 
-void send_reply_to_user(int fd, struct sockaddr_in addr, char *reply);
-void send_myauctions(int fd, struct sockaddr_in addr, char *uid); 
-void send_mybids(int fd, struct sockaddr_in addr, char *uid);
-void send_all_auctions(int fd, struct sockaddr_in addr, char* auctions_list);
-void send_record(int fd, struct sockaddr_in addr, char *aid);
-void send_asset(int fd, struct sockaddr_in addr, char *aid);
-void receive_asset(int fd, struct sockaddr_in addr, char *aid, char *asset_fname, long size);
+int send_reply_to_user(int fd, struct sockaddr_in addr, char *reply);
+int send_myauctions(int fd, struct sockaddr_in addr, char *uid); 
+int send_mybids(int fd, struct sockaddr_in addr, char *uid);
+int send_all_auctions(int fd, struct sockaddr_in addr, char* auctions_list);
+int send_record(int fd, struct sockaddr_in addr, char *aid);
+int send_asset(int fd, struct sockaddr_in addr, char *aid);
+int receive_asset(int fd, struct sockaddr_in addr, char *aid, char *asset_fname, long size);
 
 bool is_registered(char *uid);
 bool is_logged_in(char *uid);
@@ -64,20 +64,20 @@ bool end_file_exists(char *aid);
 bool file_exists(const char *filename);
 
 void try_to_login(int fd, struct sockaddr_in addr, char *uid, char *password);
-void logout(char *login_file_name, int fd, struct sockaddr_in addr, char *uid);
-void unregister(char *login_file_name, char *pass_file_name, int fd, struct sockaddr_in addr, char *uid);
+int logout(char *login_file_name, int fd, struct sockaddr_in addr, char *uid);
+int unregister(char *login_file_name, char *pass_file_name, int fd, struct sockaddr_in addr, char *uid);
 
-void register_user(int fd, struct sockaddr_in addr, char *uid, char *password);
-void register_auction(int fd, struct sockaddr_in addr, char *uid, char *name, char *asset,
+int register_user(int fd, struct sockaddr_in addr, char *uid, char *password);
+int register_auction(int fd, struct sockaddr_in addr, char *uid, char *name, char *asset,
 char *start_value, char *timeactive, char *aid);
-void start_auction(char *uid, char *name, char *asset, char *start_value, char *timeactive, char *aid);
-void close_auction(char *aid, long start_fulltime, long end_fulltime);
+int start_auction(char *uid, char *name, char *asset, char *start_value, char *timeactive, char *aid);
+int close_auction(char *aid, long start_fulltime, long end_fulltime);
 
-void create_login_file(char *uid);
-void create_pass_file(char *uid, char *password);
-void create_bid(char *aid, char *uid, int value);
-void create_bids_file(char *aid, char *uid, int value);
-void create_bidded_file(char *aid, char *uid);
+int create_login_file(char *uid);
+int create_pass_file(char *uid, char *password);
+int create_bid(char *aid, char *uid, int value);
+int create_bids_file(char *aid, char *uid, int value);
+int create_bidded_file(char *aid, char *uid);
 char* create_list_auctions(char *path_dir);
 char* create_list_bids(char *aid);
 char* create_record(char *aid);

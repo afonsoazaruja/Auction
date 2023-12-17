@@ -40,11 +40,9 @@ int main(int argc, char **argv) {
             } 
         }
     }
-    printf("> asip: %s\n> port: %s\n", asip, port);    
-
     while (true) {
-        if (first) { // because of select, otherwise it would keep printing '->'
-            write(1, "-> ", 3);
+        if (first) { // because of select, otherwise it would keep printing '>'
+            write(1, "> ", 3);
             first = false;
         }
         FD_ZERO(&read_fds);

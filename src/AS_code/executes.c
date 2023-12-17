@@ -132,6 +132,12 @@ void ex_open(int fd, struct sockaddr_in addr, char *request) {
     long size = 0;
     char *aid = get_aid();
 
+    if (aid == NULL) return;
+    
+    if (strcmp(aid, "") == 0) {
+        free(aid);
+        return;
+    }
     sscanf(request, "%*s %s %s %s %s %s %s %ld", uid, password, name,
     start_value, timeactive, asset_fname, &size);
 

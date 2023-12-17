@@ -84,7 +84,7 @@ void handle_udp_socket(int udp_socket, struct sockaddr_in udp_addr) {
     }
     else {
         buffer[n] = '\0';
-        if (verbose) printf("UDP received: %s", buffer);
+        if (verbose) printf("> UDP received: %s", buffer);
 
         if (!validate_buffer(buffer)) {
             send_reply_to_user(udp_socket, udp_addr, "ERR\n");
@@ -162,13 +162,13 @@ void execute_request_tcp(int fd, struct sockaddr_in addr, char *request) {
         if (read_request_tcp(request, fd, 8) == -1) return;
         strcat(request, "\n");
         if (!validate_buffer(request)) send_reply_to_user(fd, addr, "ERR\n");
-        if (verbose) printf("TCP received: %s\n", request);
+        if (verbose) printf("> TCP received: %s", request);
         ex_open(fd, addr, request);
     } else {
         // read everything
         if(read_request_tcp(request, fd, 0) == -1) return;
         if (!validate_buffer(request)) send_reply_to_user(fd, addr, "ERR\n");
-        if (verbose) printf("TCP received: %s", request);
+        if (verbose) printf("> TCP received: %s", request);
 
         if (strcmp(cmd, "CLS") == 0)
             ex_close(fd, addr, request);

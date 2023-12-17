@@ -98,4 +98,4 @@ int compare_auctions(const void *a, const void *b);
 int compare_bids(const void *a, const void *b);
 
 void filtrate_info(char *auction_info);
-void add_bid_to_list(Bid *bids, char *aid, char *bid_fname, int index);
+int add_bid_to_list(Bid *bids, char *aid, char *bid_fname, int index);

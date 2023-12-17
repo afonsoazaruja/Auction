@@ -79,7 +79,10 @@ void handle_auctions(char *list, char *buffer, char *type) {
                 token = strtok(NULL, " ");
                 strcat(buffer, " ");
                 strcat(buffer, token);
-                strcat(buffer, "\n└───\n");
+                token = strtok(NULL, " ");
+                strcat(buffer, "\n│Timeactive: ");
+                strcat(buffer, token);
+                strcat(buffer, " seconds\n└───\n");
             }
             token = strtok(NULL, " ");
         }      

@@ -4,9 +4,10 @@
 void analyze_reply_udp(char *buffer) {
     char type_reply[TYPE_REPLY_SIZE+1];
     char status[MAX_STATUS_SIZE+1];
-    if (sscanf(buffer, "%3s %3s", type_reply, status) != 2) exit(1); 
-
-    if (!validate_buffer(buffer)) {
+    if (sscanf(buffer, "%3s %3s", type_reply, status) != 2) {
+        sprintf(buffer, "sscanf could not read input\n");
+    }  
+    else if (!validate_buffer(buffer)) {
         sprintf(buffer, "invalid reply from server\n");
     } else if (strcmp(status, "ERR") == 0) {
         sprintf(buffer, "invalid syntax or values\n");
@@ -16,16 +17,17 @@ void analyze_reply_udp(char *buffer) {
         reply_logout(status, buffer); 
     } else if (strcmp(type_reply, "RUR") == 0) {
         reply_unregister(status, buffer);         
-    } else 
-    { // cases with list                   
+    } 
+    else { // cases with list                   
         char *list = (char *)malloc(BUFFER_SIZE);       
-        if (list == NULL) exit(1);
+        if (list == NULL) {
+            perror("Error allocating memory for list"); return;
+        }
         sscanf(buffer, "%*s %*s %[^\n]", list);
 
         if (strcmp(status, "OK") == 0) {
             handle_auctions(list, buffer, type_reply);
-        }  
-        else if (strcmp(type_reply, "RMA") == 0) { 
+        } else if (strcmp(type_reply, "RMA") == 0) { 
             reply_myauctions(status, buffer);
         } else if (strcmp(type_reply, "RMB") == 0) { 
             reply_mybids(status, buffer);
@@ -33,8 +35,8 @@ void analyze_reply_udp(char *buffer) {
             reply_list(status, buffer);
         } else if (strcmp(type_reply, "RRC") == 0) { 
             reply_show_record(status, buffer, list);
-        }
-        else sprintf(buffer, "unknown reply\n");
+        } else sprintf(buffer, "unknown reply\n");
+
         free(list);
     }
 }
@@ -50,8 +52,9 @@ void handle_auctions(char *list, char *buffer, char *type) {
         char start_time[8+1] = "";
         char timeactive[MAX_AUC_DURATION+1] = "";
 
-        sscanf(list, "%s %10s %s %s %s %s %s", host_uid, name, asset_fname, start_value, start_date, start_time, timeactive);
-
+        if (sscanf(list, "%s %10s %s %s %s %s %s", host_uid, name, asset_fname, start_value, start_date, start_time, timeactive) != 7) {
+            perror("Sscanf could not read input"); return;
+        }
         snprintf(buffer, BUFFER_SIZE, "┌───\t %s\n│Auction Host: %s\n│Opened in: %s %s\n│Duration: %s seconds\n│Asset Name: %s\n│Starting Bid: %s\n└───\n",
         name, host_uid, start_date, start_time, timeactive, asset_fname, start_value);
 
@@ -222,7 +225,7 @@ void reply_show_asset(char *status, char *buffer, int fd) {
         char asset_dir[14+MAX_FILENAME+1];
         char fname[MAX_FILENAME+1] = "";
         char *endptr = "";
-        char fsize[8+1] = ""; // 10*10⁶ (8 digitos)
+        char fsize[8+1] = ""; // 10*10⁶ (8 digits)
         long size = 0;
 
         memset(buffer, 0, BUFFER_SIZE);
@@ -231,27 +234,29 @@ void reply_show_asset(char *status, char *buffer, int fd) {
 
         size = strtol(fsize, &endptr, 10);
         char *data = malloc(size);
+        if (data == NULL) {
+            perror("Error allocating memory for data"); return;
+        }
         sprintf(asset_dir, "%s/%s", SA_DIR, fname);
         FILE *file = fopen(asset_dir, "wb");
         if (file == NULL) {
-            perror("Error opening file");
-            exit(1);
+            perror("Error opening file"); free(data); return;
         }
         do { // read bytes of file and write
-            n=read(fd, data, size);
-            if(n==-1)/*error*/exit(1);
+            n = read(fd, data, size);
+            if(n == -1) {
+                perror("Error reading bytes of file"); free(data); fclose(file); return;
+            }
             size_t bytes_written = fwrite(data, 1, n, file);
             if (bytes_written != n) {
-                perror("Error writing to file");
-                fclose(file);
-                exit(1);
+                perror("Error writing to file"); free(data); fclose(file); return;
             }
             size -= n;
-        } while(size != 0);
+        } while (size != 0);
 
         sprintf(buffer, "asset transfer: success\n");
-        fclose(file);
         free(data);
+        fclose(file);
     } else if (strcmp(status, "NOK") == 0) {
         sprintf(buffer, "asset transfer: failure\n");
     } 
@@ -275,14 +280,13 @@ int read_reply_tcp(char *src, char *dst, int fd) {
     ssize_t n = 0, total = 0;
     memset(src, 0, BUFFER_SIZE);
     while(true) {
-        n=recv(fd, src + total, 1, 0);
+        n = recv(fd, src + total, 1, 0);
         if(n==-1) {
             if(errno == EAGAIN) {
-                sprintf(src, "Timeout");
-                return -1;
+                sprintf(src, "Timeout"); return -1;
             }
             else {
-                perror("read_reply_tcp"); return -1;
+                perror("Error in recv"); return -1;
             }  
         }
         if (src[total] == ' ' || 

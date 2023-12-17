@@ -1,6 +1,5 @@
 #include "requests.h"
 #include "aux_executes.h"
-#include <sys/types.h>
 
 volatile sig_atomic_t ctrl_c = 0;
 
@@ -10,16 +9,16 @@ void handle_requests(char *port) {
 
     if (signal(SIGINT, handle_sigint) == SIG_ERR) {
         perror("Error setting up signal handler");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     if (signal(SIGCHLD, handle_sigchld) == SIG_ERR) {
         perror("Error setting up signal handler");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
-    udp_socket = do_socket(SOCK_DGRAM);
-    tcp_socket = do_socket(SOCK_STREAM);
+    udp_socket = safe_socket(SOCK_DGRAM);
+    tcp_socket = safe_socket(SOCK_STREAM);
 
     set_timeout(udp_socket, SO_SNDTIMEO);
     set_timeout(tcp_socket, SO_SNDTIMEO);
@@ -27,8 +26,8 @@ void handle_requests(char *port) {
     initialize_addr(&udp_addr, port);
     initialize_addr(&tcp_addr, port);
 
-    do_bind(udp_socket, &udp_addr);
-    do_bind(tcp_socket, &tcp_addr);
+    safe_bind(udp_socket, &udp_addr);
+    safe_bind(tcp_socket, &tcp_addr);
 
     if (listen(tcp_socket, 5) == -1) {
         perror("TCP listen"); exit(1);
@@ -54,7 +53,7 @@ void handle_requests(char *port) {
     exit(0);
 }
 
-int do_socket(int socket_type) {
+int safe_socket(int socket_type) {
     int s;
     s = socket(AF_INET, socket_type, 0);
     if (s == -1) {
@@ -72,7 +71,7 @@ void initialize_addr(struct sockaddr_in *addr, char *port) {
     addr->sin_port = htons(atoi(port));
 }
 
-void do_bind(int socket, struct sockaddr_in *addr) {
+void safe_bind(int socket, struct sockaddr_in *addr) {
    if (bind(socket, (struct sockaddr*)addr, sizeof(*addr)) == -1) {
         perror("Bind error"); exit(1);
     }
@@ -125,7 +124,7 @@ void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr) {
             ssize_t n, total = 0;
             while (total < 3) { // cmd
                 n = recv(new_tcp_socket, buffer + total, 1, 0);
-                if(n==-1) {
+                if (n==-1) {
                     close(new_tcp_socket); perror("handle_tcp_socket recv"); exit(1);
                 }
                 total += n;
@@ -214,7 +213,7 @@ int read_request_tcp(char *src, int fd, int spaces) {
 }
 
 void handle_sigint(int SIGNAL) {
-    write(1, "\n", 2);
+    if (write(1, "\n", 2) == -1) perror("Error in write");
     exit(0);
 }
 

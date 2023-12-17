@@ -17,8 +17,8 @@
 #define TIMEOUT 5
 
 void handle_requests(char *port);
-int do_socket(int socket_type);
-void do_bind(int socket_type, struct sockaddr_in *addr);
+int safe_socket(int socket_type);
+void safe_bind(int socket_type, struct sockaddr_in *addr);
 void initialize_addr(struct sockaddr_in *addr, char *port);
 void handle_udp_socket(int udp_socket, struct sockaddr_in udp_addr);
 void handle_tcp_socket(int tcp_socket, struct sockaddr_in tcp_addr);

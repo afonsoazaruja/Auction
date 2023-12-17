@@ -30,9 +30,9 @@
 #define SIZE_DATE 10
 #define SIZE_TIME 8
 
-// INCORRECT FOR NOW
 #define MAX_SIZE_START_FILE SIZE_UID + MAX_NAME_DESC + MAX_FILENAME + MAX_START_VAL + MAX_AUC_DURATION + 19 + 32 + 6 // 19 date, 32 timeactive, 6 spaces
 #define MAX_SIZE_END_FILE 19 + MAX_AUC_DURATION + 1 // 19 date, 1 space
+#define MAX_SIZE_BID_FILE SIZE_UID + MAX_START_VAL + 19 + MAX_AUC_DURATION + 3 // 19 date, 3 spaces
 
 #define SIZE_DATE 10
 #define SIZE_TIME 8
@@ -52,10 +52,10 @@ typedef struct {
 } Bid;
 
 int send_reply_to_user(int fd, struct sockaddr_in addr, char *reply);
-int send_myauctions(int fd, struct sockaddr_in addr, char *uid); 
-int send_mybids(int fd, struct sockaddr_in addr, char *uid);
-int send_all_auctions(int fd, struct sockaddr_in addr, char* auctions_list);
-int send_record(int fd, struct sockaddr_in addr, char *aid);
+void send_myauctions(int fd, struct sockaddr_in addr, char *uid); 
+void send_mybids(int fd, struct sockaddr_in addr, char *uid);
+void send_all_auctions(int fd, struct sockaddr_in addr, char* auctions_list);
+void send_record(int fd, struct sockaddr_in addr, char *aid);
 int send_asset(int fd, struct sockaddr_in addr, char *aid);
 int receive_asset(int fd, struct sockaddr_in addr, char *aid, char *asset_fname, long size);
 

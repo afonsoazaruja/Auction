@@ -8,10 +8,9 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
             sprintf(buffer, "invalid input");
             return false;
         } 
-        exit(1);
+        sprintf(buffer, "sscanf could not read input"); return false;
     }
     *socket_type = SOCK_DGRAM; // assume its udp command
-
     if (!validate_buffer(buffer)) {
         sprintf(buffer, "two or more spaces between words");
         return false;
@@ -63,6 +62,7 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
 
 bool handle_login(char *buffer, struct session *user) {
     char uid[SIZE_UID+1], password[SIZE_PASSWORD+1];
+    puts("got here");
 
     if (sscanf(buffer, "%*s %s %s", uid, password) != 2 ||
         !is_login_valid(uid, password)) {
@@ -86,14 +86,15 @@ bool handle_record(char *buffer) {
     
     if (sscanf(buffer, "%*s %s", aid) != 1) {
         sprintf(buffer, "missing AID");
-        return false;
     }
-    if (!is_AID(aid)) {
+    else if (!is_AID(aid)) {
         sprintf(buffer, "invalid AID");
-        return false;
     }
-    sprintf(buffer, "SRC %s\n", aid);
-    return true;
+    else {
+        sprintf(buffer, "SRC %s\n", aid);
+        return true;
+    }
+    return false;
 }
 
 bool handle_open(char *buffer, struct session *user) {
@@ -105,8 +106,8 @@ bool handle_open(char *buffer, struct session *user) {
 
     if (sscanf(buffer, "%*s %s %s %s %s", name, asset_fname,
         start_value, timeactive) != 4) {
-            sprintf(buffer, "invalid data for open");
-            return false;
+        sprintf(buffer, "invalid data for open");
+        return false;
     }
     if (!is_open_valid(name, asset_fname, start_value, timeactive)) {
         sprintf(buffer, "invalid data for open");
@@ -129,14 +130,15 @@ bool handle_asset(char *buffer) {
     
     if (sscanf(buffer, "%*s %s", aid) != 1) {
         sprintf(buffer, "missing AID");
-        return false;
     }
-    if (!is_AID(aid)) {
+    else if (!is_AID(aid)) {
         sprintf(buffer, "invalid AID");
-        return false;
     }
-    sprintf(buffer, "SAS %s\n", aid);
-    return true;
+    else {
+        sprintf(buffer, "SAS %s\n", aid);
+        return true;
+    }
+    return false;
 }
 
 bool handle_bid(char *buffer, struct session *user) {
@@ -145,18 +147,18 @@ bool handle_bid(char *buffer, struct session *user) {
     
     if (sscanf(buffer, "%*s %s %d", aid, &value) != 2) {
         sprintf(buffer, "missing AID or bid");
-        return false;
     }
-    if (!is_AID(aid)) {
+    else if (!is_AID(aid)) {
         sprintf(buffer, "invalid AID");
-        return false;
     }
-    if (!is_bid(value)) {
+    else if (!is_bid(value)) {
         sprintf(buffer, "max bid");
-        return false;
     }
-    sprintf(buffer, "BID %s %s %s %d\n", user->UID, user->password, aid, value);
-    return true;
+    else {
+        sprintf(buffer, "BID %s %s %s %d\n", user->UID, user->password, aid, value);
+        return true;
+    }
+    return false;
 }
 
 bool handle_close(char *buffer, struct session *user) {
@@ -164,16 +166,16 @@ bool handle_close(char *buffer, struct session *user) {
     
     if (sscanf(buffer, "%*s %s", aid) != 1) {
         sprintf(buffer, "missing AID");
-        return false;
     }
     if (!is_AID(aid)) {
         sprintf(buffer, "invalid AID");
-        return false;
     }
-    sprintf(buffer, "CLS %s %s %s\n", user->UID, user->password, aid);
-    return true;
+    else {
+        sprintf(buffer, "CLS %s %s %s\n", user->UID, user->password, aid);
+        return true;
+    }
+    return false;
 }
-
 
 char* get_file_name(char *dir) {
     int len = strlen(dir);
@@ -196,21 +198,20 @@ char* get_file_name(char *dir) {
 long get_file_size(char *fname) {
     struct stat filestat;
        
-    if (stat(fname, &filestat) == 0) {
-        return filestat.st_size;
-    } else {
-        perror("Error getting file information");
-    }
-    return 0; // only to compile
+    if (stat(fname, &filestat) != 0) {
+        perror("Error getting file information"); return -1;
+    } 
+    return filestat.st_size;
 }
 
 void display_help() {
+    printf("\n");
     printf("%-48s %s\n", "Command", "Description");
-    printf("---------------------------------------------------- --------------------------------------------\n");
+    printf("---------------------------------------------    --------------------------------------------------------------\n");
     printf("%-48s %s\n", "login UID password", "Log in or register a user");
     printf("%-48s %s\n", "logout", "Log out the currently logged-in user");
     printf("%-48s %s\n", "unregister", "Unregister the currently logged-in user");
-    printf("%-48s %s\n", "exit", "Exit the User application");
+    printf("%-48s %s\n", "exit", "Exit the User Application");
     printf("%-48s %s\n", "open name asset_fname start_value timeactive", "Open a new auction");
     printf("%-48s %s\n", "close AID", "Close an ongoing auction");
     printf("%-48s %s\n", "myauctions or ma", "List auctions started by the logged-in user");
@@ -219,4 +220,5 @@ void display_help() {
     printf("%-48s %s\n", "show_asset AID or sa AID", "View the image file of the asset in sale");
     printf("%-48s %s\n", "bid AID value or b AID value", "Place a bid for an auction");
     printf("%-48s %s\n", "show_record AID or sr AID", "View the record of an auction");
+    printf("\n");
 }

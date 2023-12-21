@@ -60,7 +60,7 @@ bool is_desc_name(char *name) {
     if (len > MAX_NAME_DESC) return false;  
 
     for (int i = 0; i < len; i++) 
-        if (!isalnum(name[i])) return false;
+        if (!isalnum(name[i]) && !(name[i] == '-') && !(name[i] == '_')) return false;
     return true;
 }
 

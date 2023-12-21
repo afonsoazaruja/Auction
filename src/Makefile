@@ -23,3 +23,8 @@ $(USER_TARGET): $(USER_SRCS)
 clean:
 	rm -f $(AS_TARGET)
 	rm -f $(USER_TARGET)
+
+purge:
+	rm -rf ../ASDIR/AUCTIONS/*
+	rm -rf ../ASDIR/USERS/*
+	rm -f ../SA/*

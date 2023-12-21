@@ -15,7 +15,7 @@
 #include <sys/time.h>
 #include <signal.h>
 
-#define DEFAULT_PORT "58071" // 58000 + GN
+#define DEFAULT_PORT "58023" // 58000 + GN
 #define SIZE_PORT 6
 #define BUFFER_SIZE 7000
 #define MAX_HOSTNAME_SIZE 253

@@ -500,10 +500,11 @@ char* create_list_auctions(char *path_dir) {
     size_t currentPos = 0;
     for (size_t i=0; i<num_auctions; i++) {
         sprintf(list_auctions + currentPos, "%s %d ", auctions[i].aid, auctions[i].state);
-        currentPos += strlen(auctions[i].aid) + 3; // +3 for 2 spaces + state (0 or 1);
+        if (i != num_auctions -1)
+            currentPos += strlen(auctions[i].aid) + 3; // +3 for 2 spaces + state (0 or 1);
     }
     free(auctions);
-    list_auctions[currentPos] = '\0';
+    list_auctions[currentPos-1] = '\0';
     return list_auctions;
 }
 
@@ -530,7 +531,8 @@ char *create_list_bids(char *aid) {
         + strlen(bids[i].time) + get_num_digits(bids[i].sec_time) + 7; // + 7 for B and spaces
     }
     free(bids);
-    list_bids[currentPos-1] = '\0';
+    if (num_bids == 0) list_bids[0] = '\0';
+    else list_bids[currentPos-1] = '\0';
     return list_bids;
 }
 
@@ -634,10 +636,9 @@ char* get_auction_info(char *aid) {
         perror("[ERR] get_auction_info fopen"); return NULL;
     }
     fgets(auction_info, MAX_SIZE_START_FILE, start_file);
-    filtrate_info(auction_info);
+    int n = filtrate_info(auction_info);
 
-    auction_info[strlen(auction_info)] = '\0';
-
+    auction_info[n] = '\0';
     fclose(start_file);
     return auction_info;
 }
@@ -855,7 +856,7 @@ int add_bid_to_list(Bid *bids, char *aid, char *bid_fname, int index) {
     return 0;
 }
 
-void filtrate_info(char *auction_info) {
+int filtrate_info(char *auction_info) {
     char uid[SIZE_UID+1];
     char auction_name[MAX_NAME_DESC+1];
     char asset_fname[MAX_FILENAME+1];
@@ -867,6 +868,7 @@ void filtrate_info(char *auction_info) {
     sscanf(auction_info, "%s %s %s %d %d %s %s", uid, auction_name, asset_fname,
     &start_value, &time_active, start_date, start_time);
 
-    sprintf(auction_info, "%s %s %s %d %s %s %d", uid, auction_name, asset_fname,
+    return sprintf(auction_info, "%s %s %s %d %s %s %d", uid, auction_name, asset_fname,
     start_value, start_date, start_time, time_active);
+    
 }

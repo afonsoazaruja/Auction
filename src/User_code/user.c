@@ -52,19 +52,6 @@ int main(int argc, char **argv) {
         if (ready > 0) {
             if (FD_ISSET(STDIN_FILENO, &read_fds)) {    
                 fgets(buffer, BUFFER_SIZE, stdin);
-                // to be removed before submisson 
-                if (strcmp(buffer, "log\n") == 0) {
-                    sprintf(buffer, "login 104168 password\n");
-                    printf("%s", buffer);
-                }
-                else if (strcmp(buffer, "log2\n") == 0) {
-                    sprintf(buffer, "login 102198 password\n");
-                    printf("%s", buffer);
-                }
-                else if (strcmp(buffer, "open\n") == 0) sprintf(buffer, "open name Hispano-Suiza-K6.jpg 100 15\n");
-                else if (strcmp(buffer, "open2\n") == 0) sprintf(buffer, "open name DaVinci_01.jpg 100 30\n");
-                // ------------------------------------------------------------------------- //
-
                 if (strcmp(buffer, "help\n") == 0) {
                     display_help();
                 } 
@@ -171,7 +158,6 @@ void send_open(char *buffer, int fd) {
     char asset_fname[MAX_FILENAME+1];
     char asset_dir[14+MAX_FILENAME+1];
     long size = 0;
-    puts(buffer);
 
     if (sscanf(buffer, "%*s %*s %*s %*s %*s %*s %s %ld", asset_fname, &size) != 2) {
         perror("Sscanf could not read input"); return;

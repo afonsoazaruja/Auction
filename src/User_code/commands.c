@@ -62,7 +62,6 @@ bool is_input_valid(char *buffer, int *socket_type, struct session *user) {
 
 bool handle_login(char *buffer, struct session *user) {
     char uid[SIZE_UID+1], password[SIZE_PASSWORD+1];
-    puts("got here");
 
     if (sscanf(buffer, "%*s %s %s", uid, password) != 2 ||
         !is_login_valid(uid, password)) {

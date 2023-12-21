@@ -125,9 +125,6 @@ void ex_show_record(int fd, struct sockaddr_in addr, char *request) {
     if (sscanf(request, "%*s %s", aid) != 1) {
         send_reply_to_user(fd, addr, "RRC ERR\n");
     }
-    else if (!is_AID(aid)) {
-        send_reply_to_user(fd, addr, "RRC ERR\n");
-    }
     else if (!auction_exists(aid)) {
         send_reply_to_user(fd, addr, "RRC NOK\n");
     } else {

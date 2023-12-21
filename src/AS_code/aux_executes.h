@@ -106,5 +106,5 @@ time_t get_start_fulltime(char *aid);
 int compare_auctions(const void *a, const void *b);
 int compare_bids(const void *a, const void *b);
 
-void filtrate_info(char *auction_info);
+int filtrate_info(char *auction_info);
 int add_bid_to_list(Bid *bids, char *aid, char *bid_fname, int index);

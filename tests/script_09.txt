@@ -1,0 +1,21 @@
+login 111111 abcdefgh
+show_record 001
+show_record 002
+bid 001 8
+bid 001 20
+bid 002 900
+bid 002 1010
+show_record 001
+show_record 002
+logout
+login 222222 hgfedcba
+show_record 001
+show_record 002
+bid 001 8
+bid 001 20
+bid 002 1000
+bid 002 1500
+logout
+show_record 001
+show_record 002
+exit

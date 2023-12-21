@@ -1,0 +1,103 @@
+login 111111 abcdefgh
+open One A.txt 1 100
+open Two AB.txt 2 100
+open Three ABC.txt 3 100
+open Four ABCD.txt 4 100
+open Five ABCDE.txt 5 100
+open Isetta BMW-Isetta.jpg 10000 100
+open VanGogh VanGogh_01.jpg 100 100
+open Mercedes Mercedes_300B.jpg 5000 100
+open Koh-i-Noor Koh-i-Noor.jpg 10 100
+open Apollo11 Apollo11_Columbia.jpg 5000 150
+open Monet Monet_01.jpg 30 150
+open WhistlerM Whistlers_Mother.jpg 6000 150
+open Aston Aston_Martin_DB5.jpg 10000 150
+open Renoir Renoir_01.jpg 50 200
+open MonaLisa DaVinci_01.jpg 5 200
+open RollsRoyce RollsRoyce_01.jpg 20000 200
+open Picasso Picasso_01.jpg 4 200
+open HispaSuiza Hispano-Suiza-K6.jpg 21000 250
+open Rembrandt Rembrandt_01.jpg 15 250
+logout
+login 222222 hgfedcba
+bid 001 2
+bid 002 3
+bid 003 4
+bid 004 5
+bid 005 6
+bid 006 10010
+bid 007 110
+bid 008 5010
+bid 009 20
+bid 010 5010
+bid 011 40
+bid 012 6010
+bid 013 10020
+bid 014 60
+bid 015 10
+bid 016 20020
+bid 017 10
+bid 018 21010
+bid 019 30
+logout
+show_record 001
+show_record 002
+show_record 003
+show_record 004
+show_record 005
+show_record 006
+show_record 007
+show_record 008
+show_record 009
+show_record 010
+show_record 011
+show_record 012
+show_record 013
+show_record 014
+show_record 015
+show_record 016
+show_record 017
+show_record 018
+show_record 019
+sleep 5
+login 222222 hgfedcba
+bid 001 20
+bid 002 30
+bid 003 40
+bid 004 50
+bid 005 60
+bid 006 10020
+bid 007 120
+bid 008 5020
+bid 009 30
+bid 010 5010
+bid 011 40
+bid 012 6010
+bid 013 10020
+bid 014 60
+bid 015 10
+bid 016 20020
+bid 017 10
+bid 018 21010
+bid 019 30
+logout
+show_record 001
+show_record 002
+show_record 003
+show_record 004
+show_record 005
+show_record 006
+show_record 007
+show_record 008
+show_record 009
+show_record 010
+show_record 011
+show_record 012
+show_record 013
+show_record 014
+show_record 015
+show_record 016
+show_record 017
+show_record 018
+show_record 019
+exit

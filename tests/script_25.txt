@@ -1,0 +1,22 @@
+login 111111 aaaaaaaa
+open One A.txt 1 7200
+open Two AB.txt 2 7200
+open Three ABC.txt 3 7200
+open Four ABCD.txt 4 7200
+open Five ABCDE.txt 5 7200
+open Isetta BMW-Isetta.jpg 10000 7200
+open VanGogh VanGogh_01.jpg 100 7200
+open Mercedes Mercedes_300B.jpg 5000 7200
+open Koh-i-Noor Koh-i-Noor.jpg 10 7200
+open Apollo11 Apollo11_Columbia.jpg 5000 7200
+open Monet Monet_01.jpg 30 7200
+open WhistlerM Whistlers_Mother.jpg 6000 7200
+open Aston Aston_Martin_DB5.jpg 10000 7200
+open Renoir Renoir_01.jpg 50 7200
+open MonaLisa DaVinci_01.jpg 5 7200
+open RollsRoyce RollsRoyce_01.jpg 20000 7200
+open Picasso Picasso_01.jpg 4 7200
+open HispaSuiza Hispano-Suiza-K6.jpg 21000 7200
+open Rembrandt Rembrandt_01.jpg 15 7200
+logout
+exit

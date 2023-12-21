@@ -1,0 +1,4 @@
+login 111111 babababa
+login 111111 abababab
+logout
+exit

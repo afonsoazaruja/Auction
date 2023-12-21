@@ -1,0 +1,59 @@
+login 111111 abcdefgh
+open One A.txt 1 10
+open Two AB.txt 2 10
+open Three ABC.txt 3 10
+open Four ABCD.txt 4 10
+open Five ABCDE.txt 5 10
+open Isetta BMW-Isetta.jpg 10000 10
+open VanGogh VanGogh_01.jpg 100 10
+open Mercedes Mercedes_300B.jpg 5000 10
+open Koh-i-Noor Koh-i-Noor.jpg 10 10
+open Apollo11 Apollo11_Columbia.jpg 5000 15
+open Monet Monet_01.jpg 30 15
+open WhistlerM Whistlers_Mother.jpg 6000 15
+open Aston Aston_Martin_DB5.jpg 10000 15
+open Renoir Renoir_01.jpg 50 20
+open MonaLisa DaVinci_01.jpg 5 20
+open RollsRoyce RollsRoyce_01.jpg 20000 20
+open Picasso Picasso_01.jpg 4 20
+open HispaSuiza Hispano-Suiza-K6.jpg 21000 25
+open Rembrandt Rembrandt_01.jpg 15 25
+logout
+list
+login 222222 hgfedcba
+bid 001 2
+bid 002 3
+bid 003 4
+bid 004 5
+bid 005 6
+bid 006 10010
+bid 007 110
+bid 008 5010
+bid 009 20
+bid 010 5010
+bid 011 40
+bid 012 6010
+bid 013 10020
+bid 014 60
+bid 015 10
+bid 016 20020
+bid 017 10
+bid 018 21010
+bid 019 30
+myauctions
+mybids
+list
+sleep 10
+mybids
+list
+sleep 5
+mybids
+list
+sleep 5
+mybids
+list
+sleep 5
+mybids
+list
+logout
+exit

@@ -1,0 +1,84 @@
+login 111111 abcdefgh
+open One A.txt 1 10
+open Two AB.txt 2 10
+open Apollo11 Apollo11_Columbia.jpg 5000 15
+open Monet Monet_01.jpg 30 15
+open Renoir Renoir_01.jpg 50 20
+open MonaLisa DaVinci_01.jpg 5 20
+open HispaSuiza Hispano-Suiza-K6.jpg 21000 25
+open Rembrandt Rembrandt_01.jpg 15 25
+logout
+login 222222 hgfedcba
+bid 001 2
+bid 002 3
+bid 003 5010
+bid 004 40
+bid 005 60
+bid 006 10
+bid 007 21010
+bid 008 30
+logout
+show_record 001
+show_record 002
+show_record 003
+show_record 004
+show_record 005
+show_record 006
+show_record 007
+show_record 008
+sleep 5
+login 222222 hgfedcba
+bid 001 4
+bid 002 6
+bid 003 5020
+bid 004 50
+bid 005 70
+bid 006 20
+bid 007 21020
+bid 008 40
+logout
+show_record 001
+show_record 002
+show_record 003
+show_record 004
+show_record 005
+show_record 006
+show_record 007
+show_record 008
+sleep 5
+show_record 001
+show_record 002
+show_record 003
+show_record 004
+show_record 005
+show_record 006
+show_record 007
+show_record 008
+sleep 5
+show_record 001
+show_record 002
+show_record 003
+show_record 004
+show_record 005
+show_record 006
+show_record 007
+show_record 008
+sleep 5
+show_record 001
+show_record 002
+show_record 003
+show_record 004
+show_record 005
+show_record 006
+show_record 007
+show_record 008
+sleep 5
+show_record 001
+show_record 002
+show_record 003
+show_record 004
+show_record 005
+show_record 006
+show_record 007
+show_record 008
+exit

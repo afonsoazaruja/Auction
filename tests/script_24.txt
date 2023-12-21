@@ -1,0 +1,23 @@
+login 444444 dddddddd
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+open A A.txt 10 1
+open WhistlersM Whistlers_Mother.jpg 100 1
+logout
+exit

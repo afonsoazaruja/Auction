@@ -1,0 +1,5 @@
+login 222222 hgfedcba
+open WhistlersM Whistlers_Mother.jpg 1000 300
+logout
+exit
+

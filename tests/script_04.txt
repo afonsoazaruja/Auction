@@ -1,0 +1,12 @@
+login 111111 abababab
+logout
+login 222222 cdcdcdcd
+logout
+login 111111 abababab
+unregister
+login 222222 cdcdcdcd
+unregister
+login 111111 abcdefgh
+logout
+login 222222 hgfedcba
+exit

@@ -117,3 +117,7 @@ Interaction between the User application (User) and the auction server (AS) for 
     RBD status: Reply to bid request.
 
 Note: Filenames (Fname) are limited to 24 alphanumerical characters (plus ‘-‘, ‘_’, and ‘.’), including the separating dot and the 3-letter extension: “nnn...nnnn.xxx”. The file size (Fsize) is limited to 10 MB (10.106 B).
+
+### Project Documentation
+
+For more information, please refer to the project [statement](https://github.com/afonsoazaruja/IST-proj-rc/blob/main/docs/Statement.pdf) and for more details on the implementation refer to the project [guide](https://github.com/afonsoazaruja/IST-proj-rc/blob/main/docs/Guide.pdf).
